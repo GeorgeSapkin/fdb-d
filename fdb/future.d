@@ -105,6 +105,8 @@ class KeyValueFuture(C) : Future!(C, KeyValueResult) {
 
         FDBKeyValue * kvs;
         int len;
+        // Receives true if there are more result, or false if all results have
+        // been transmited
         fdb_bool_t more;
         err = fdb_future_get_keyvalue_array(future, &kvs, &len, &more);
         if (err) return typeof(return).init;
