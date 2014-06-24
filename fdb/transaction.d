@@ -9,13 +9,13 @@ import fdb.fdb_c,
        fdb.helpers;
 
 struct RangeEndpoint {
-    ubyte[] value;
-    bool    orEqual;
-    int     offset;
+    Key  key;
+    bool orEqual;
+    int  offset;
 }
 
 class Transaction {
-    private FDBTransaction * tr;
+    private TransactionHandle tr;
 
     private static auto start(F, C)(C callback) pure {
         auto _future = new F(f, callback);
@@ -23,13 +23,13 @@ class Transaction {
         return _future;
     }
 
-    this(FDBTransaction * ptr) { this.tr = ptr; }
+    this(TransactionHandle tr) { this.tr = tr; }
 
     ~this() { destroy; }
 
     void destroy() { fdb_transaction_destroy(tr); }
 
-    void set(ubyte[] key, ubyte[] value) {
+    void set(Key key, Value value) {
         fdb_transaction_set(
             tr,
             &key[0],
@@ -39,15 +39,15 @@ class Transaction {
     }
 
     void commit(C)(C callback) {
-        FDBFuture * f = fdb_transaction_commit(tr);
+        auto f = fdb_transaction_commit(tr);
         return start!VoidFuture(f, callback);
     }
 
-    void clear(ubyte[] key) {
+    void clear(Key key) {
         fdb_transaction_clear(tr, &key[0], cast(int)key.length);
     }
 
-    void clearRange(ubyte[] begin, ubyte[] end) {
+    void clearRange(Key begin, Key end) {
         fdb_transaction_clear_range(
             tr,
             &begin[0],
@@ -57,13 +57,13 @@ class Transaction {
     }
 
     auto getKey(C)(
-        ubyte[] key,
-        int     selectorOrEqual,
-        int     selectorOffset,
-        bool    snapshot,
-        C       callback) {
+        Key  key,
+        int  selectorOrEqual,
+        int  selectorOffset,
+        bool snapshot,
+        C    callback) {
 
-        FDBFuture * f = fdb_transaction_get_key(
+        auto f = fdb_transaction_get_key(
             tr,
             &key[0],
             key.length,
@@ -74,8 +74,8 @@ class Transaction {
         return start!KeyFuture(f, callback);
     }
 
-    voud get(C)(ubyte[] key, bool snapshot, C callback) {
-        FDBFuture * f = fdb_transaction_get(
+    voud get(C)(Key key, bool snapshot, C callback) {
+        auto f = fdb_transaction_get(
             tr,
             &key[0],
             key.length,
@@ -93,16 +93,16 @@ class Transaction {
         bool          reverse,
         C             callback) {
 
-        FDBFuture * f = fdb_transaction_get_range(
+        auto f = fdb_transaction_get_range(
             tr,
 
-            &start.value[0],
-            start.value.length,
+            &start.key[0],
+            start.key.length,
             cast(fdb_bool_t)start.orEqual,
             start.offset,
 
-            &end.value[0],
-            end.value.length,
+            &end.key[0],
+            end.key.length,
             cast(fdb_bool_t)end.orEqual,
             end.offset,
 
@@ -116,14 +116,14 @@ class Transaction {
         return start!KeyValueFuture(f, callback);
     }
 
-    auto watch(C)(ubyte[] key, C callback) {
-        FDBFuture * f = fdb_transaction_watch(tr, &key[0], key.length);
+    auto watch(C)(Key key, C callback) {
+        auto f = fdb_transaction_watch(tr, &key[0], key.length);
         return start!WatchFuture(callback);
     }
 
     private void addConflictRange(
-        ubyte[]           start,
-        ubyte[]           end,
+        Key               start,
+        Key               end,
         ConflictRangeType type) {
 
         auto err = fdb_transaction_add_conflict_range(
@@ -136,16 +136,16 @@ class Transaction {
         enforce(!err, err.message);
     }
 
-    void addReadConflictRange(ubyte[] start, ubyte[] end) {
+    void addReadConflictRange(Key start, Key end) {
         addConflictRange(start, end, ConflictRangeType.READ);
     }
 
-    void addWriteConflictRange(ubyte[] start, ubyte[] end) {
+    void addWriteConflictRange(Key start, Key end) {
         addConflictRange(start, end, ConflictRangeType.WRITE);
     }
 
-    void onError(C)(auto err, C callback) {
-        FDBFuture * f = fdb_transaction_on_error(tr, err);
+    void onError(C)(fdb_error_t err, C callback) {
+        auto f = fdb_transaction_on_error(tr, err);
         return start!VoidFuture(f, callback);
     }
 
@@ -167,8 +167,8 @@ class Transaction {
 
     void cancel() { fdb_transaction_cancel(tr); }
 
-    void getAddressesForKey(C)(ubyte[] key, C callback) {
-        FDBFuture * f = fdb_transaction_get_addresses_for_key(
+    void getAddressesForKey(C)(Key key, C callback) {
+        auto f = fdb_transaction_get_addresses_for_key(
             tr,
             &key[0],
             key.length);
@@ -187,7 +187,7 @@ class Transaction {
      * of the value. However, this offset technique requires that you know the
      * addition will not cause the integer field within the value to overflow.
      */
-    void add(ubyte[] key, ubyte[] value) {
+    void add(Key key, Value value) {
         callAtomicOperation(key, value, MutationType.ADD);
     }
 
@@ -200,7 +200,7 @@ class Transaction {
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitAnd(ubyte[] key, ubyte[] value) {
+    void bitAnd(Key key, Value value) {
         callAtomicOperation(key, value, MutationType.BIT_AND);
     }
 
@@ -213,7 +213,7 @@ class Transaction {
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitOr(ubyte[] key, ubyte[] value) {
+    void bitOr(Key key, Value value) {
         callAtomicOperation(key, value, MutationType.BIT_OR);
     }
 
@@ -226,13 +226,13 @@ class Transaction {
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitXor(ubyte[] key, ubyte[] value) {
+    void bitXor(Key key, Value value) {
         callAtomicOperation(key, value, MutationType.BIT_XOR);
     }
 
     private void callAtomicOperation(
-        ubyte[]      key,
-        ubyte[]      value,
+        Key          key,
+        Value        value,
         MutationType type) {
 
         fdb_transaction_atomic_op(

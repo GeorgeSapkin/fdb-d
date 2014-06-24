@@ -10,16 +10,16 @@ import fdb.fdb_c,
        fdb.transaction;
 
 class Database {
-    private FDBDatabase * db;
+    private DatabaseHandle db;
 
-    this(FDBDatabase * db) { this.db = db; }
+    this(DatabaseHandle db) { this.db = db; }
 
     ~this() { destroy; }
 
     void destroy() { fdb_database_destroy(db); }
 
     auto createTransaction() {
-        FDBTransaction * tr;
+        TransactionHandle tr;
         auto err = fdb_database_create_transaction(db, &tr);
         enforce(!err, err.message);
         return new Transaction(tr);

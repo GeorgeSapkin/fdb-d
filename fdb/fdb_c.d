@@ -5,12 +5,22 @@ import fdb.fdb_c_options;
 immutable uint FDB_API_VERSION = 23;
 
 struct FDBCluster {}
-struct FDBFuture {}
-struct FDBDatabase {}
-struct FDBTransaction {}
+alias ClusterHandle     = FDBCluster *;
 
-alias fdb_error_t    = int;
-alias fdb_bool_t     = int;
+struct FDBDatabase {}
+alias DatabaseHandle    = FDBDatabase *;
+
+struct FDBFuture {}
+alias FutureHandle      = FDBFuture *;
+
+struct FDBTransaction {}
+alias TransactionHandle = FDBTransaction *;
+
+alias fdb_error_t       = int;
+alias fdb_bool_t        = int;
+
+alias Key               = ubyte[];
+alias Value             = ubyte[];
 
 struct keyvalue {
     align (4):

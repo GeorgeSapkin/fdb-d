@@ -42,10 +42,10 @@ void stopNetwork() {
 }
 
 auto createCluster(string clusterFilePath) {
-    FDBFuture * f = fdb_create_cluster(clusterFilePath.toStringz);
-    auto err      = fdb_future_block_until_ready(f);
+    auto f   = fdb_create_cluster(clusterFilePath.toStringz);
+    auto err = fdb_future_block_until_ready(f);
 
-    FDBCluster * cluster;
+    ClusterHandle cluster;
     if (!err) err = fdb_future_get_cluster(f, &cluster);
     enforce(!err, err.message);
 

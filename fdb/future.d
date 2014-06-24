@@ -6,9 +6,7 @@ import std.algorithm,
 
 import fdb.fdb_c;
 
-alias Key     = ubyte[];
 alias PKey    = ubyte *;
-alias Value   = ubyte[];
 alias PValue  = ubyte *;
 alias Records = Value[Key];
 
@@ -16,12 +14,12 @@ class Future(C, V) {
     private alias P = Future!(C, V);
     private alias T = Task!(worker, P);
 
-    private FDBFuture * future;
-    private C           callbackFunc;
-    private T         * futureTask;
+    private FutureHandle future;
+    private C            callbackFunc;
+    private T *          futureTask;
 
     @disable this();
-    this(FDBFuture * future, C callbackFunc) {
+    this(FutureHandle future, C callbackFunc) {
         this.future       = future;
         this.callbackFunc = callbackFunc;
     }
@@ -49,12 +47,12 @@ class Future(C, V) {
         thiz.callbackFunc(err, value);
     }
 
-    abstract V extractValue(FDBFuture * future, out fdb_error_t err = 0);
+    abstract V extractValue(FutureHandle future, out fdb_error_t err = 0);
 }
 
 private mixin template FutureCtor(C) {
     @disable this();
-    this(FDBFuture * future, C callbackFunc) {
+    this(FutureHandle future, C callbackFunc) {
         super(future, callbackFunc);
     }
 }
@@ -62,7 +60,7 @@ private mixin template FutureCtor(C) {
 class ValueFuture(C) : Future!(C, Value) {
     mixin FutureCtor!C;
 
-    override Value extractValue(FDBFuture * future, out fdb_error_t err) {
+    override Value extractValue(FutureHandle future, out fdb_error_t err) {
         PValue value;
         int    valueLength,
                valuePresent;
@@ -79,7 +77,7 @@ class ValueFuture(C) : Future!(C, Value) {
 class KeyFuture(C) : Future!(C, Key) {
     mixin FutureCtor!C;
 
-    override Value extractValue(FDBFuture * future, out fdb_error_t err) {
+    override Value extractValue(FutureHandle future, out fdb_error_t err) {
         PKey key;
         int  keyLength;
 
@@ -92,7 +90,7 @@ class KeyFuture(C) : Future!(C, Key) {
 class VoidFuture(C) : Future!(C, void) {
     mixin FutureCtor!C;
 
-    override void extractValue(FDBFuture * future, out fdb_error_t err) {
+    override void extractValue(FutureHandle future, out fdb_error_t err) {
         err = fdb_future_get_error(future);
     }
 }
@@ -100,7 +98,7 @@ class VoidFuture(C) : Future!(C, void) {
 class KeyValueFuture(C) : Future!(C, Records) {
     mixin FutureCtor!C;
 
-    override Records extractValue(FDBFuture * future, out fdb_error_t err) {
+    override Records extractValue(FutureHandle future, out fdb_error_t err) {
         FDBKeyValue * kv;
         int len;
         // TODO : sup with more?
@@ -121,7 +119,7 @@ class KeyValueFuture(C) : Future!(C, Records) {
 class VersionFuture(C) : Future!(C, ulong) {
     mixin FutureCtor!C;
 
-    override ulong extractValue(FDBFuture * future, out fdb_error_t err) {
+    override ulong extractValue(FutureHandle future, out fdb_error_t err) {
         ulong ver;
         err = fdb_future_get_version(future, &ver);
         if (err) return typeof(return).init;
@@ -132,7 +130,7 @@ class VersionFuture(C) : Future!(C, ulong) {
 class StringFuture(C) : Future!(C, string[]) {
     mixin FutureCtor!C;
 
-    override string[] extractValue(FDBFuture * future, out fdb_error_t err) {
+    override string[] extractValue(FutureHandle future, out fdb_error_t err) {
         ubyte ** stringArr;
         int      count;
         err = fdb_future_get_string_array(future, &stringArr, &count);
