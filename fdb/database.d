@@ -76,6 +76,7 @@ class Database {
             db,
             op,
             value.toStringz,
-            cast(int)value.length); enforce(!err, err.message);
+            cast(int)value.length);
+        enforce(!err, err.message);
     }
 }
