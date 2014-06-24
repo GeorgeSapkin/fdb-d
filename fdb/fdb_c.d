@@ -42,7 +42,7 @@ fdb_error_t     fdb_select_api_version(int runtime_version) {
 ////////////////////// functions implemented in libfdb_c ///////////////////////
 extern (C):
 
-char *         fdb_get_error(
+char *          fdb_get_error(
     fdb_error_t code);
 
 fdb_error_t     fdb_network_set_option(
