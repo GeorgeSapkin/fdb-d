@@ -6,6 +6,7 @@ import std.conv,
 
 import fdb.fdb_c,
        fdb.fdb_c_options,
+       fdb.helpers,
        fdb.transaction;
 
 class Database {
@@ -20,7 +21,7 @@ class Database {
     auto createTransaction() {
         FDBTransaction * tr;
         auto err = fdb_database_create_transaction(db, &tr);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
         return new Transaction(tr);
     }
 
@@ -67,7 +68,7 @@ class Database {
             op,
             cast(immutable(char)*)&value,
             cast(int)int.sizeof);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
     }
 
     private void setDatabaseOption(DatabaseOption op, string value) {
@@ -75,7 +76,6 @@ class Database {
             db,
             op,
             value.toStringz,
-            cast(int)value.length);
-        enforce(!err, fdb_get_error(err).to!string);
+            cast(int)value.length); enforce(!err, err.message);
     }
 }

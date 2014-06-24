@@ -5,7 +5,8 @@ import std.conv,
        std.string;
 
 import fdb.fdb_c,
-       fdb.fdb_c_options;
+       fdb.fdb_c_options,
+       fdb.helpers;
 
 class NetworkOptions {
     // Deprecated
@@ -79,13 +80,13 @@ class NetworkOptions {
         fdb_error_t err = fdb_network_set_option(op,
                                                  cast(immutable(char)*)value,
                                                  cast(int)value.length);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
     }
 
     private static void setNetworkOption(NetworkOption op, string value) {
         fdb_error_t err = fdb_network_set_option(op,
                                                  value.toStringz,
                                                  cast(int)value.length);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
     }
 };

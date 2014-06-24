@@ -5,7 +5,8 @@ import std.conv,
        std.string;
 
 import fdb.database,
-       fdb.fdb_c;
+       fdb.fdb_c,
+       fdb.helpers;
 
 class Cluster {
     private FDBCluster * cluster;
@@ -26,7 +27,7 @@ class Cluster {
 
         FDBDatabase * database;
         if (!err) err = fdb_future_get_database(f, &database);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
 
         return new Database(database);
     }

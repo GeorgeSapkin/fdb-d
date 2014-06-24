@@ -7,7 +7,8 @@ import std.array,
        std.string;
 
 import fdb.cluster,
-       fdb.fdb_c;
+       fdb.fdb_c,
+       fdb.helpers;
 
 private auto networkStarted = false;
 
@@ -15,7 +16,7 @@ void selectAPIVersion(int apiVersion) {
     auto err = fdb_select_api_version(apiVersion);
     enforce(err != 2203,
         "API version not supported by the installed FoundationDB C library");
-    enforce(!err, fdb_get_error(err).to!string);
+    enforce(!err, err.message);
 }
 
 void runNetwork() {
@@ -24,7 +25,7 @@ void runNetwork() {
         auto writer = appender!string;
         formattedWrite(writer,
             "FoundationDB network thread encountered error: %s\n",
-            fdb_get_error(err).to!string);
+            err.message);
         enforce(!err, writer.data);
     }
 }
@@ -37,7 +38,7 @@ void startNetwork() {
 
 void stopNetwork() {
     auto err = fdb_stop_network();
-    enforce(!err, fdb_get_error(err).to!string);
+    enforce(!err, err.message);
 }
 
 auto createCluster(string clusterFilePath) {
@@ -46,7 +47,7 @@ auto createCluster(string clusterFilePath) {
 
     FDBCluster * cluster;
     if (!err) err = fdb_future_get_cluster(f, &cluster);
-    enforce(!err, fdb_get_error(err).to!string);
+    enforce(!err, err.message);
 
     return new Cluster(cluster);
 }

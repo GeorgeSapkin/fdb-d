@@ -5,7 +5,8 @@ import std.conv,
 
 import fdb.fdb_c,
        fdb.fdb_c_options,
-       fdb.future;
+       fdb.future,
+       fdb.helpers;
 
 struct RangeEndpoint {
     ubyte[] value;
@@ -132,7 +133,7 @@ class Transaction {
             &end[0],
             cast(int)end.length,
             type);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
     }
 
     void addReadConflictRange(ubyte[] start, ubyte[] end) {
@@ -160,7 +161,7 @@ class Transaction {
     auto getCommittedVersion() {
         long ver;
         auto err = fdb_transaction_get_committed_version(tr, &ver);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
         return ver;
     }
 
@@ -387,6 +388,6 @@ class Transaction {
             op,
             cast(immutable(char)*)&value,
             cast(int)int.sizeof);
-        enforce(!err, fdb_get_error(err).to!string);
+        enforce(!err, err.message);
     }
 }
