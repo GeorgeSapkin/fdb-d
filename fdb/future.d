@@ -95,24 +95,27 @@ class VoidFuture(C) : Future!(C, void) {
     }
 }
 
-class KeyValueFuture(C) : Future!(C, Records) {
+alias KeyValueResult = Tuple!(Records, bool);
+class KeyValueFuture(C) : Future!(C, KeyValueResult) {
     mixin FutureCtor!C;
 
-    override Records extractValue(FutureHandle future, out fdb_error_t err) {
-        FDBKeyValue * kv;
+    override KeyValueResult extractValue(
+        FutureHandle future,
+        out fdb_error_t err) {
+
+        FDBKeyValue * kvs;
         int len;
-        // TODO : sup with more?
         fdb_bool_t more;
-        err = fdb_future_get_keyvalue_array(future, &kv, &len, &more);
+        err = fdb_future_get_keyvalue_array(future, &kvs, &len, &more);
         if (err) return typeof(return).init;
 
         auto tuples = reduce!
-            ((a, b) => {
-                a[b.key[0..b.key_length]] = b.value[0..b.value_length];
+            ((a, kv) => {
+                a[kv.key[0..kv.key_length]] = kv.value[0..kv.value_length];
                 return a;
             })
-            (new Records, kv[0..len]);
-        return tuples;
+            (new Records, kvs[0..len]);
+        return Tuple!(tuples, cast(bool)more);
     }
 }
 
