@@ -6,8 +6,8 @@ import std.algorithm,
 
 import fdb.fdb_c;
 
-alias PKey    = ubyte *;
-alias PValue  = ubyte *;
+private alias PKey    = ubyte *;
+private alias PValue  = ubyte *;
 alias Records = Value[Key];
 
 class Future(C, V) {
@@ -135,7 +135,7 @@ class StringFuture(C) : Future!(C, string[]) {
         int      count;
         err = fdb_future_get_string_array(future, &stringArr, &count);
         if (err) return typeof(return).init;
-        auto strings = stringArr[0..count].map!(to!string);
+        auto strings = stringArr[0..count].map!(to!string).array;
         return strings;
     }
 }
