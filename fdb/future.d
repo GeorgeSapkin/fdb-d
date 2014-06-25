@@ -6,17 +6,17 @@ import std.algorithm,
 
 import fdb.fdb_c;
 
-private alias PKey    = ubyte *;
-private alias PValue  = ubyte *;
-alias Records = Value[Key];
+private alias PKey      = ubyte *;
+private alias PValue    = ubyte *;
+alias Records           = Value[Key];
 
 class Future(C, V) {
     private alias P = Future!(C, V);
     private alias T = Task!(worker, P);
 
-    private FutureHandle future;
-    private C            callbackFunc;
-    private T *          futureTask;
+    private shared FutureHandle future;
+    private C                   callbackFunc;
+    private T *                 futureTask;
 
     @disable this();
     this(FutureHandle future, C callbackFunc) {
@@ -24,9 +24,16 @@ class Future(C, V) {
         this.callbackFunc = callbackFunc;
     }
 
-    ~this() { destroy; }
+    ~this() {
+        destroy;
+    }
 
-    void destroy() { fdb_future_destroy(future); }
+    void destroy() {
+        if (future) {
+            fdb_future_destroy(future);
+            future = null;
+        }
+    }
 
     void start() {
         fdb_error_t err = fdb_future_set_callback(future, futureReady, this);
@@ -44,6 +51,7 @@ class Future(C, V) {
     private static void worker(P thiz) {
         fdb_error_t err;
         auto value = thiz.extractValue(thiz.future, err);
+        thiz.destroy;
         thiz.callbackFunc(err, value);
     }
 
