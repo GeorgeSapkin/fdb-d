@@ -9,6 +9,14 @@ import fdb.fdb_c,
        fdb.helpers;
 
 class NetworkOptions {
+    static void init() {
+        fdb_error_t err = fdb_network_set_option(
+            NetworkOption.NONE,
+            null,
+            0);
+        enforce(!err, err.message);
+    }
+
     // Deprecated
     // Parameter: (String) IP:PORT
     //ADD_NET_OPTION("local_address", 10, String);
