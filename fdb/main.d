@@ -54,7 +54,7 @@ auto createCluster(string clusterFilePath) {
     const FDBFuture * f = fdb_create_cluster(clusterFilePath.toStringz);
     enforceError(fdb_future_block_until_ready(f));
 
-	FDBCluster * cluster;
+    FDBCluster * cluster;
     enforceError(fdb_future_get_cluster(f, &cluster));
 
     return new Cluster(cluster);
