@@ -31,6 +31,7 @@ class Future(C, V) {
 
     void destroy() {
         if (future) {
+            // NB : Also releases the memory returned by get functions
             fdb_future_destroy(future);
             future = null;
         }
@@ -47,9 +48,10 @@ class Future(C, V) {
     }
 
     private static void worker(P thiz) {
+        scope (exit) delete thiz;
+
         fdb_error_t err;
         auto value = thiz.extractValue(thiz.future, err);
-        thiz.destroy;
         thiz.callbackFunc(err, value);
     }
 
