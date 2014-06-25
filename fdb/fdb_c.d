@@ -66,7 +66,7 @@ void            fdb_future_destroy(
     FDBFuture *         f);
 
 fdb_error_t     fdb_future_block_until_ready(
-    const FDBFuture *         f);
+    const FDBFuture *   f);
 
 fdb_bool_t      fdb_future_is_ready(
     FDBFuture *         f);
@@ -88,7 +88,7 @@ fdb_error_t     fdb_future_get_key(
     int *               out_key_length);
 
 fdb_error_t     fdb_future_get_cluster(
-    const FDBFuture *         f,
+    const FDBFuture *   f,
     FDBCluster **       out_cluster);
 
 fdb_error_t     fdb_future_get_database(
