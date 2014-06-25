@@ -77,7 +77,8 @@ class ValueFuture(C) : Future!(C, Value) {
                                    &valuePresent,
                                    cast(PValue *) &value,
                                    &valueLength);
-        if (err || !valuePresent) return null;
+        if (err || !valuePresent)
+            return null;
         return value[0..valueLength];
     }
 }
@@ -90,7 +91,8 @@ class KeyFuture(C) : Future!(C, Key) {
         int  keyLength;
 
         err = fdb_future_get_key(future, cast(PValue *) &key, &keyLength);
-        if (err) return typeof(return).init;
+        if (err)
+            return typeof(return).init;
         return key[0..keyLength];
     }
 }
@@ -117,7 +119,8 @@ class KeyValueFuture(C) : Future!(C, KeyValueResult) {
         // been transmited
         fdb_bool_t more;
         err = fdb_future_get_keyvalue_array(future, &kvs, &len, &more);
-        if (err) return typeof(return).init;
+        if (err)
+            return typeof(return).init;
 
         auto tuples = reduce!
             ((a, kv) => {
@@ -135,7 +138,8 @@ class VersionFuture(C) : Future!(C, ulong) {
     override ulong extractValue(FutureHandle future, out fdb_error_t err) {
         ulong ver;
         err = fdb_future_get_version(future, &ver);
-        if (err) return typeof(return).init;
+        if (err)
+            return typeof(return).init;
         return ver;
     }
 }
@@ -147,7 +151,8 @@ class StringFuture(C) : Future!(C, string[]) {
         ubyte ** stringArr;
         int      count;
         err = fdb_future_get_string_array(future, &stringArr, &count);
-        if (err) return typeof(return).init;
+        if (err)
+            return typeof(return).init;
         auto strings = stringArr[0..count].map!(to!string).array;
         return strings;
     }
@@ -155,6 +160,13 @@ class StringFuture(C) : Future!(C, string[]) {
 
 class WatchFuture(C) : VoidFuture!C {
     mixin FutureCtor!C;
-    ~this() { cancel; }
-    void cancel() { if (future) fdb_future_cancel(future); }
+
+    ~this() {
+        cancel;
+    }
+
+    void cancel() {
+        if (future)
+            fdb_future_cancel(future);
+    }
 }
