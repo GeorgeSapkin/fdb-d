@@ -30,7 +30,7 @@ class Database {
      * random pattern. Defaults to 100000.
      * Parameter: (Int) Max location cache entries
      */
-    void setLocationCacheSize(int value) {
+    void setLocationCacheSize(long value) {
         setDatabaseOption(DatabaseOption.LOCATION_CACHE_SIZE, value);
     }
 
@@ -40,7 +40,7 @@ class Database {
      * Defaults to 10000 and cannot be larger than 1000000.
      * Parameter: (Int) Max outstanding watches
      */
-    void setMaxWatches(int value) {
+    void setMaxWatches(long value) {
         setDatabaseOption(DatabaseOption.MAX_WATCHES, value);
     }
 
@@ -62,12 +62,12 @@ class Database {
         setDatabaseOption(DatabaseOption.DATACENTER_ID, value);
     }
 
-    private void setDatabaseOption(DatabaseOption op, int value) {
+    private void setDatabaseOption(DatabaseOption op, long value) {
         auto err = fdb_database_set_option(
             db,
             op,
             cast(immutable(char)*)&value,
-            cast(int)int.sizeof);
+            cast(int)value.sizeof);
         enforce(!err, err.message);
     }
 

@@ -10,11 +10,7 @@ import fdb.fdb_c,
 
 class NetworkOptions {
     static void init() {
-        fdb_error_t err = fdb_network_set_option(
-            NetworkOption.NONE,
-            null,
-            0);
-        enforce(!err, err.message);
+        setNetworkOption(NetworkOption.NONE);
     }
 
     // Deprecated
@@ -82,6 +78,11 @@ class NetworkOptions {
      */
     static void setTlsVerifyPeers(ubyte[] value) {
         setNetworkOption(NetworkOption.TLS_VERIFY_PEERS, value);
+    }
+
+    private static void setNetworkOption(NetworkOption op) {
+        fdb_error_t err = fdb_network_set_option(op, null, 0);
+        enforce(!err, err.message);
     }
 
     private static void setNetworkOption(NetworkOption op, ubyte[] value) {

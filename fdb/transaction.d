@@ -369,7 +369,7 @@ class Transaction {
      * transaction can be used again after it is reset.
      * Parameter: (Int) value in milliseconds of timeout
      */
-    void setTimeout(int value) {
+    void setTimeout(long value) {
         setTransactionOption(TransactionOption.TIMEOUT, value);
     }
 
@@ -378,16 +378,21 @@ class Transaction {
      * ``[-1, INT_MAX]``. If set to -1, will disable the retry limit.
      * Parameter: (Int) number of times to retry
      */
-    void setRetryLimit(int value) {
+    void setRetryLimit(long value) {
         setTransactionOption(TransactionOption.RETRY_LIMIT, value);
     }
 
-    private void setTransactionOption(TransactionOption op, int value = 0) {
+    private void setTransactionOption(TransactionOption op) {
+        auto err = fdb_transaction_set_option(tr, op, null, 0);
+        enforce(!err, err.message);
+    }
+
+    private void setTransactionOption(TransactionOption op, long value) {
         auto err = fdb_transaction_set_option(
             tr,
             op,
             cast(immutable(char)*)&value,
-            cast(int)int.sizeof);
+            cast(int)value.sizeof);
         enforce(!err, err.message);
     }
 }
