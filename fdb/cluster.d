@@ -26,7 +26,9 @@ class Cluster {
         auto err = fdb_future_block_until_ready(f);
 
         DatabaseHandle database;
-        if (!err) err = fdb_future_get_database(f, &database);
+        if (!err)
+			err = fdb_future_get_database(f, &database);
+
         enforce(!err, err.message);
 
         return new Database(database);

@@ -2,6 +2,9 @@ module fdb.fdb_c_options;
 
 enum NetworkOption : uint {
     // deprecated
+    NONE				= 0,
+
+    // deprecated
     LOCAL_ADDRESS        = 10,
 
     // deprecated

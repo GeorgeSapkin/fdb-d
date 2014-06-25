@@ -2,7 +2,7 @@ module fdb.fdb_c;
 
 import fdb.fdb_c_options;
 
-immutable uint FDB_API_VERSION = 23;
+immutable uint FDB_API_VERSION = 200;
 
 struct FDBCluster {}
 alias ClusterHandle     = FDBCluster *;
@@ -66,7 +66,7 @@ void            fdb_future_destroy(
     FDBFuture *         f);
 
 fdb_error_t     fdb_future_block_until_ready(
-    FDBFuture *         f);
+    const FDBFuture *         f);
 
 fdb_bool_t      fdb_future_is_ready(
     FDBFuture *         f);
@@ -88,7 +88,7 @@ fdb_error_t     fdb_future_get_key(
     int *               out_key_length);
 
 fdb_error_t     fdb_future_get_cluster(
-    FDBFuture *         f,
+    const FDBFuture *         f,
     FDBCluster **       out_cluster);
 
 fdb_error_t     fdb_future_get_database(
