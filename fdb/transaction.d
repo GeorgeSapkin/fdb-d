@@ -46,7 +46,7 @@ class Transaction {
 
     void commit(C)(C callback) {
         // cancel, commit and reset are mutually exclusive
-        synchronized (tr) {
+        synchronized (this) {
             auto f = fdb_transaction_commit(tr);
         }
         return start!VoidFuture(f, callback);
@@ -163,7 +163,7 @@ class Transaction {
      */
     void reset() {
         // cancel, commit and reset are mutually exclusive
-        synchronized (tr) {
+        synchronized (this) {
             fdb_transaction_reset(tr);
         }
     }
@@ -185,7 +185,7 @@ class Transaction {
 
     void cancel() {
         // cancel, commit and reset are mutually exclusive
-        synchronized (tr) {
+        synchronized (this) {
             fdb_transaction_cancel(tr);
         }
     }
