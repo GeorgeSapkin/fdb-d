@@ -45,7 +45,10 @@ class Transaction {
     }
 
     void commit(C)(C callback) {
-        auto f = fdb_transaction_commit(tr);
+        // cancel, commit and reset are mutually exclusive
+        synchronized (tr) {
+            auto f = fdb_transaction_commit(tr);
+        }
         return start!VoidFuture(f, callback);
     }
 
@@ -156,8 +159,13 @@ class Transaction {
         return start!VoidFuture(f, callback);
     }
 
+    /* Resets transaction to its initial state
+     */
     void reset() {
-        fdb_transaction_reset(tr);
+        // cancel, commit and reset are mutually exclusive
+        synchronized (tr) {
+            fdb_transaction_reset(tr);
+        }
     }
 
     void setReadVersion(int ver) {
@@ -176,7 +184,10 @@ class Transaction {
     }
 
     void cancel() {
-        fdb_transaction_cancel(tr);
+        // cancel, commit and reset are mutually exclusive
+        synchronized (tr) {
+            fdb_transaction_cancel(tr);
+        }
     }
 
     void getAddressesForKey(C)(Key key, C callback) {
