@@ -8,19 +8,22 @@ import std.array,
        std.string;
 
 import fdb.cluster,
+       fdb.error,
        fdb.fdb_c,
        fdb.fdb_c_options,
-       fdb.helpers,
        fdb.networkoptions;
 
 private shared auto networkStarted = false;
 private Task!(networkThread) * networkTask;
 
+private auto FBD_RUNTIME_API_VERSION = 200;
+
+shared static this() {
+    selectAPIVersion(FBD_RUNTIME_API_VERSION);
+}
+
 void selectAPIVersion(int apiVersion) {
-    int err = fdb_select_api_version(apiVersion);
-    enforce(err != 2203,
-        "API version not supported by the installed FoundationDB C library");
-    enforce(!err, err.message);
+    enforceError(fdb_select_api_version(apiVersion));
 }
 
 auto networkThread() {
@@ -29,45 +32,30 @@ auto networkThread() {
 
 private void runNetwork() {
     NetworkOptions.init;
-
-    auto err = fdb_setup_network();
-    if (err == 0) {
-        networkTask = task!networkThread;
-        networkTask.executeInNewThread;
-    }
-
-    if (err) {
-        auto writer = appender!string;
-        formattedWrite(writer,
-            "FoundationDB network thread encountered error: %s\n",
-            err.message);
-        enforce(!err, writer.data);
-    }
+    enforceError(fdb_setup_network);
+    networkTask = task!networkThread;
+    networkTask.executeInNewThread;
 }
 
 void startNetwork() {
     if (networkStarted) return;
-    networkStarted = true;
     runNetwork();
+    networkStarted = true;
 }
 
 void stopNetwork() {
-    auto err = fdb_stop_network();
-    if (!err && networkTask)
-        err = networkTask.yieldForce;
-    enforce(!err, err.message);
+    enforceError(fdb_stop_network);
+    if (networkTask)
+        enforceError(networkTask.yieldForce);
     networkStarted = false;
 }
 
 auto createCluster(string clusterFilePath) {
     const FDBFuture * f = fdb_create_cluster(clusterFilePath.toStringz);
-    auto err = fdb_future_block_until_ready(f);
+    enforceError(fdb_future_block_until_ready(f));
 
 	FDBCluster * cluster;
-    if (err == 0)
-		err = fdb_future_get_cluster(f, &cluster);
-
-    enforce(!err, err.message);
+    enforceError(fdb_future_get_cluster(f, &cluster));
 
     return new Cluster(cluster);
 }

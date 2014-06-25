@@ -4,9 +4,9 @@ import std.conv,
        std.exception,
        std.string;
 
-import fdb.fdb_c,
-       fdb.fdb_c_options,
-       fdb.helpers;
+import fdb.error,
+       fdb.fdb_c,
+       fdb.fdb_c_options;
 
 class NetworkOptions {
     static void init() {
@@ -81,8 +81,7 @@ class NetworkOptions {
     }
 
     private static void setNetworkOption(NetworkOption op) {
-        fdb_error_t err = fdb_network_set_option(op, null, 0);
-        enforce(!err, err.message);
+        enforceError(fdb_network_set_option(op, null, 0));
     }
 
     private static void setNetworkOption(NetworkOption op, ubyte[] value) {
@@ -90,7 +89,7 @@ class NetworkOptions {
             op,
             cast(immutable(char)*)value,
             cast(int)value.length);
-        enforce(!err, err.message);
+        enforceError(err);
     }
 
     private static void setNetworkOption(NetworkOption op, string value) {
@@ -98,6 +97,6 @@ class NetworkOptions {
             op,
             value.toStringz,
             cast(int)value.length);
-        enforce(!err, err.message);
+        enforceError(err);
     }
 };

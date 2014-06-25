@@ -4,7 +4,8 @@ import std.algorithm,
        std.exception,
        std.parallelism;
 
-import fdb.fdb_c;
+import fdb.error,
+       fdb.fdb_c;
 
 private alias PKey      = ubyte *;
 private alias PValue    = ubyte *;
@@ -36,10 +37,7 @@ class Future(C, V) {
     }
 
     void start() {
-        fdb_error_t err = fdb_future_set_callback(future, futureReady, this);
-        // TODO : is there no fdb_get_error for that error code?
-        // NodeCallback.h line 58
-        enforce(!err, "fdb_future_set_callback failed");
+        enforceError(fdb_future_set_callback(future, futureReady, this));
     }
 
     private static void futureReady(P thiz) {
@@ -59,7 +57,6 @@ class Future(C, V) {
 }
 
 private mixin template FutureCtor(C) {
-    @disable this();
     this(FutureHandle future, C callbackFunc) {
         super(future, callbackFunc);
     }
@@ -77,7 +74,7 @@ class ValueFuture(C) : Future!(C, Value) {
                                    &valuePresent,
                                    cast(PValue *) &value,
                                    &valueLength);
-        if (err || !valuePresent)
+        if (err != FDBError.NONE || !valuePresent)
             return null;
         return value[0..valueLength];
     }
@@ -91,7 +88,7 @@ class KeyFuture(C) : Future!(C, Key) {
         int  keyLength;
 
         err = fdb_future_get_key(future, cast(PValue *) &key, &keyLength);
-        if (err)
+        if (err != FDBError.NONE)
             return typeof(return).init;
         return key[0..keyLength];
     }
@@ -119,7 +116,7 @@ class KeyValueFuture(C) : Future!(C, KeyValueResult) {
         // been transmited
         fdb_bool_t more;
         err = fdb_future_get_keyvalue_array(future, &kvs, &len, &more);
-        if (err)
+        if (err != FDBError.NONE)
             return typeof(return).init;
 
         auto tuples = reduce!
@@ -138,7 +135,7 @@ class VersionFuture(C) : Future!(C, ulong) {
     override ulong extractValue(FutureHandle future, out fdb_error_t err) {
         ulong ver;
         err = fdb_future_get_version(future, &ver);
-        if (err)
+        if (err != FDBError.NONE)
             return typeof(return).init;
         return ver;
     }
@@ -151,7 +148,7 @@ class StringFuture(C) : Future!(C, string[]) {
         ubyte ** stringArr;
         int      count;
         err = fdb_future_get_string_array(future, &stringArr, &count);
-        if (err)
+        if (err != FDBError.NONE)
             return typeof(return).init;
         auto strings = stringArr[0..count].map!(to!string).array;
         return strings;

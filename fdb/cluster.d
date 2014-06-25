@@ -5,17 +5,23 @@ import std.conv,
        std.string;
 
 import fdb.database,
-       fdb.fdb_c,
-       fdb.helpers;
+       fdb.error,
+       fdb.fdb_c;
 
 class Cluster {
     private ClusterHandle cluster;
 
-    this(ClusterHandle cluster) { this.cluster = cluster; }
+    this(ClusterHandle cluster) {
+        this.cluster = cluster;
+    }
 
-    ~this() { destroy; }
+    ~this() {
+        destroy;
+    }
 
-    void destroy() { fdb_cluster_destroy(cluster); }
+    void destroy() {
+        fdb_cluster_destroy(cluster);
+    }
 
     auto openDatabase(string dbName) {
         auto f = fdb_cluster_create_database(
@@ -23,14 +29,10 @@ class Cluster {
             dbName.toStringz(),
             cast(int)dbName.length);
 
-        auto err = fdb_future_block_until_ready(f);
+        enforceError(fdb_future_block_until_ready(f));
 
         DatabaseHandle database;
-        if (!err)
-			err = fdb_future_get_database(f, &database);
-
-        enforce(!err, err.message);
-
+        enforceError(fdb_future_get_database(f, &database));
         return new Database(database);
     }
 }

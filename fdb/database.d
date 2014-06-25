@@ -4,24 +4,29 @@ import std.conv,
        std.exception,
        std.string;
 
-import fdb.fdb_c,
+import fdb.error,
+       fdb.fdb_c,
        fdb.fdb_c_options,
-       fdb.helpers,
        fdb.transaction;
 
 class Database {
     private DatabaseHandle db;
 
-    this(DatabaseHandle db) { this.db = db; }
+    this(DatabaseHandle db) {
+        this.db = db;
+    }
 
-    ~this() { destroy; }
+    ~this() {
+        destroy;
+    }
 
-    void destroy() { fdb_database_destroy(db); }
+    void destroy() {
+        fdb_database_destroy(db);
+    }
 
     auto createTransaction() {
         TransactionHandle tr;
-        auto err = fdb_database_create_transaction(db, &tr);
-        enforce(!err, err.message);
+        enforceError(fdb_database_create_transaction(db, &tr));
         return new Transaction(tr);
     }
 
@@ -68,7 +73,7 @@ class Database {
             op,
             cast(immutable(char)*)&value,
             cast(int)value.sizeof);
-        enforce(!err, err.message);
+        enforceError(err);
     }
 
     private void setDatabaseOption(DatabaseOption op, string value) {
@@ -77,6 +82,6 @@ class Database {
             op,
             value.toStringz,
             cast(int)value.length);
-        enforce(!err, err.message);
+        enforceError(err);
     }
 }

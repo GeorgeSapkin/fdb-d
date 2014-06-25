@@ -3,10 +3,10 @@ module fdb.transaction;
 import std.conv,
        std.exception;
 
-import fdb.fdb_c,
+import fdb.error,
+       fdb.fdb_c,
        fdb.fdb_c_options,
-       fdb.future,
-       fdb.helpers;
+       fdb.future;
 
 struct RangeEndpoint {
     Key  key;
@@ -23,11 +23,17 @@ class Transaction {
         return _future;
     }
 
-    this(TransactionHandle tr) { this.tr = tr; }
+    this(TransactionHandle tr) {
+        this.tr = tr;
+    }
 
-    ~this() { destroy; }
+    ~this() {
+        destroy;
+    }
 
-    void destroy() { fdb_transaction_destroy(tr); }
+    void destroy() {
+        fdb_transaction_destroy(tr);
+    }
 
     void set(Key key, Value value) {
         fdb_transaction_set(
@@ -80,6 +86,7 @@ class Transaction {
             &key[0],
             key.length,
             snapshot);
+
         return start!ValueFuture(f, callback);
     }
 
@@ -133,7 +140,7 @@ class Transaction {
             &end[0],
             cast(int)end.length,
             type);
-        enforce(!err, err.message);
+        enforceError(err);
     }
 
     void addReadConflictRange(Key start, Key end) {
@@ -149,9 +156,13 @@ class Transaction {
         return start!VoidFuture(f, callback);
     }
 
-    void reset() { fdb_transaction_reset(tr); }
+    void reset() {
+        fdb_transaction_reset(tr);
+    }
 
-    void setReadVersion(int ver) { fdb_transaction_set_read_version(tr, ver); }
+    void setReadVersion(int ver) {
+        fdb_transaction_set_read_version(tr, ver);
+    }
 
     void getReadVersion(C)(C callback) {
         FDBFuture * f = fdb_transaction_get_read_version(tr);
@@ -160,18 +171,20 @@ class Transaction {
 
     auto getCommittedVersion() {
         long ver;
-        auto err = fdb_transaction_get_committed_version(tr, &ver);
-        enforce(!err, err.message);
+        enforceError(fdb_transaction_get_committed_version(tr, &ver));
         return ver;
     }
 
-    void cancel() { fdb_transaction_cancel(tr); }
+    void cancel() {
+        fdb_transaction_cancel(tr);
+    }
 
     void getAddressesForKey(C)(Key key, C callback) {
         auto f = fdb_transaction_get_addresses_for_key(
             tr,
             &key[0],
             key.length);
+
         return start!StringFuture(f, callback);
     }
 
@@ -383,8 +396,7 @@ class Transaction {
     }
 
     private void setTransactionOption(TransactionOption op) {
-        auto err = fdb_transaction_set_option(tr, op, null, 0);
-        enforce(!err, err.message);
+        enforceError(fdb_transaction_set_option(tr, op, null, 0));
     }
 
     private void setTransactionOption(TransactionOption op, long value) {
@@ -393,6 +405,6 @@ class Transaction {
             op,
             cast(immutable(char)*)&value,
             cast(int)value.sizeof);
-        enforce(!err, err.message);
+        enforceError(err);
     }
 }
