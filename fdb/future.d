@@ -2,7 +2,8 @@ module fdb.future;
 
 import std.algorithm,
        std.exception,
-       std.parallelism;
+       std.parallelism,
+       std.traits;
 
 import fdb.error,
        fdb.fdb_c;
@@ -11,17 +12,17 @@ private alias PKey      = ubyte *;
 private alias PValue    = ubyte *;
 alias Records           = Value[Key];
 
-class Future(C, V) {
-    private alias P = Future!(C, V);
-    private alias T = Task!(worker, P);
+shared class Future(C, V) {
+    private alias SF = shared(Future!(C, V));
+    private alias SH = shared(FutureHandle);
+    private alias SE = shared(fdb_error_t);
+    private alias T  = Task!(worker, SF);
 
-    private shared FutureHandle future;
-    private C                   callbackFunc;
-    private T *                 futureTask;
+    private FutureHandle future;
+    private C            callbackFunc;
 
-    @disable this();
     this(FutureHandle future, C callbackFunc) {
-        this.future       = future;
+        this.future       = cast(shared)future;
         this.callbackFunc = callbackFunc;
     }
 
@@ -32,30 +33,42 @@ class Future(C, V) {
     void destroy() {
         if (future) {
             // NB : Also releases the memory returned by get functions
-            fdb_future_destroy(future);
+            fdb_future_destroy(cast(FutureHandle)future);
             future = null;
         }
     }
 
     void start() {
-        enforceError(fdb_future_set_callback(future, futureReady, this));
+        auto err = fdb_future_set_callback(
+            cast(FutureHandle) future,
+            cast(FDBCallback)  &futureReady,
+            cast(void*)        &this);
+        enforceError(err);
     }
 
-    private static void futureReady(P thiz) {
-        futureTask = task!worker(this);
+    static void futureReady(FutureHandle f, SF thiz) {
+        auto futureTask = task!worker(thiz);
         // or futureTask.executeInNewThread?
-        taskPoll.put(futureTask);
+        taskPool.put(futureTask);
     }
 
-    private static void worker(P thiz) {
+    static void worker(SF thiz) {
         scope (exit) delete thiz;
 
-        fdb_error_t err;
-        auto value = thiz.extractValue(thiz.future, err);
-        thiz.callbackFunc(err, value);
+        shared fdb_error_t err;
+        with (thiz) {
+            static if (is(ReturnType!extractValue == void)) {
+                extractValue(future, err);
+                callbackFunc(err);
+            }
+            else {
+                auto value = extractValue(future, err);
+                callbackFunc(err, value);
+            }
+        }
     }
 
-    abstract V extractValue(FutureHandle future, out fdb_error_t err = 0);
+    abstract V extractValue(SH future, out SE err);
 }
 
 private mixin template FutureCtor(C) {
@@ -64,60 +77,67 @@ private mixin template FutureCtor(C) {
     }
 }
 
-class ValueFuture(C) : Future!(C, Value) {
+shared class ValueFuture(C) : Future!(C, Value) {
     mixin FutureCtor!C;
 
-    override Value extractValue(FutureHandle future, out fdb_error_t err) {
+    override Value extractValue(SH future, out SE err) {
         PValue value;
         int    valueLength,
                valuePresent;
 
-        err = fdb_future_get_value(future,
-                                   &valuePresent,
-                                   cast(PValue *) &value,
-                                   &valueLength);
+        err = fdb_future_get_value(
+            cast(FutureHandle)future,
+            &valuePresent,
+            &value,
+            &valueLength);
         if (err != FDBError.NONE || !valuePresent)
             return null;
         return value[0..valueLength];
     }
 }
 
-class KeyFuture(C) : Future!(C, Key) {
+shared class KeyFuture(C) : Future!(C, Key) {
     mixin FutureCtor!C;
 
-    override Value extractValue(FutureHandle future, out fdb_error_t err) {
+    override Value extractValue(SH future, out SE err) {
         PKey key;
         int  keyLength;
 
-        err = fdb_future_get_key(future, cast(PValue *) &key, &keyLength);
+        err = fdb_future_get_key(
+            cast(FutureHandle)future,
+            &key,
+            &keyLength);
         if (err != FDBError.NONE)
             return typeof(return).init;
         return key[0..keyLength];
     }
 }
 
-class VoidFuture(C) : Future!(C, void) {
+shared class VoidFuture(C) : Future!(C, void) {
     mixin FutureCtor!C;
 
-    override void extractValue(FutureHandle future, out fdb_error_t err) {
-        err = fdb_future_get_error(future);
+    override void extractValue(SH future, out SE err) {
+        err = fdb_future_get_error(
+            cast(FutureHandle)future);
     }
 }
 
 alias KeyValueResult = Tuple!(Records, bool);
-class KeyValueFuture(C) : Future!(C, KeyValueResult) {
+shared class KeyValueFuture(C) : Future!(C, KeyValueResult) {
     mixin FutureCtor!C;
 
-    override KeyValueResult extractValue(
-        FutureHandle future,
-        out fdb_error_t err) {
+    override KeyValueResult extractValue(SH future, out SE err) {
 
         FDBKeyValue * kvs;
         int len;
         // Receives true if there are more result, or false if all results have
         // been transmited
         fdb_bool_t more;
-        err = fdb_future_get_keyvalue_array(future, &kvs, &len, &more);
+        err = fdb_future_get_keyvalue_array(
+            cast(FutureHandle)future,
+            &kvs,
+            &len,
+            &more);
         if (err != FDBError.NONE)
             return typeof(return).init;
 
@@ -131,25 +151,30 @@ class KeyValueFuture(C) : Future!(C, KeyValueResult) {
     }
 }
 
-class VersionFuture(C) : Future!(C, ulong) {
+shared class VersionFuture(C) : Future!(C, ulong) {
     mixin FutureCtor!C;
 
-    override ulong extractValue(FutureHandle future, out fdb_error_t err) {
-        ulong ver;
-        err = fdb_future_get_version(future, &ver);
+    override ulong extractValue(SH future, out SE err) {
+        long ver;
+        err = fdb_future_get_version(
+            cast(FutureHandle)future,
+            &ver);
         if (err != FDBError.NONE)
             return typeof(return).init;
         return ver;
     }
 }
 
-class StringFuture(C) : Future!(C, string[]) {
+shared class StringFuture(C) : Future!(C, string[]) {
     mixin FutureCtor!C;
 
-    override string[] extractValue(FutureHandle future, out fdb_error_t err) {
+    override string[] extractValue(SH future, out SE err) {
         ubyte ** stringArr;
         int      count;
-        err = fdb_future_get_string_array(future, &stringArr, &count);
+        err = fdb_future_get_string_array(
+            cast(FutureHandle)future,
+            &stringArr,
+            &count);
         if (err != FDBError.NONE)
             return typeof(return).init;
         auto strings = stringArr[0..count].map!(to!string).array;
@@ -157,7 +182,7 @@ class StringFuture(C) : Future!(C, string[]) {
     }
 }
 
-class WatchFuture(C) : VoidFuture!C {
+shared class WatchFuture(C) : VoidFuture!C {
     mixin FutureCtor!C;
 
     ~this() {

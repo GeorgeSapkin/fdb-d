@@ -76,7 +76,8 @@ fdb_error_t     fdb_future_set_callback(
     FDBCallback         callback,
     void *              callback_parameter);
 
-fdb_error_t     fdb_future_get_error(FDBFuture * f);
+fdb_error_t     fdb_future_get_error(
+    FDBFuture *         f);
 
 fdb_error_t     fdb_future_get_version(
     FDBFuture *         f,
