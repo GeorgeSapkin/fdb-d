@@ -1,6 +1,7 @@
 module fdb.future;
 
-import std.algorithm,
+import core.thread,
+       std.algorithm,
        std.array,
        std.conv,
        std.exception,
@@ -33,13 +34,12 @@ class KeyValueResult {
     }
 }
 
-alias FutureCallback(V) = void function(fdb_error_t err, V value);
+alias FutureCallback(V) = void delegate(fdb_error_t err, V value);
 
 shared class Future(C, V) {
     private alias SF = shared(Future!(C, V));
     private alias SH = shared(FutureHandle);
     private alias SE = shared(fdb_error_t);
-    private alias T  = Task!(worker, SF);
 
     private FutureHandle future;
     private C            callbackFunc;
@@ -65,29 +65,28 @@ shared class Future(C, V) {
         auto err = fdb_future_set_callback(
             cast(FutureHandle) future,
             cast(FDBCallback)  &futureReady,
-            cast(void*)        &this);
+            cast(void*)        this);
         enforceError(err);
     }
 
-    static void futureReady(FutureHandle f, SF thiz) {
-        auto futureTask = task!worker(thiz);
+    extern(C) static void futureReady(SH f, SF thiz) {
+        thread_attachThis;
+        auto futureTask = task!worker(f, thiz);
         // or futureTask.executeInNewThread?
         taskPool.put(futureTask);
     }
 
-    static void worker(SF thiz) {
+    static void worker(SH f, SF thiz) {
         scope (exit) delete thiz;
 
         shared fdb_error_t err;
-        with (thiz) {
-            static if (is(ReturnType!extractValue == void)) {
-                extractValue(future, err);
-                (cast(C)callbackFunc)(err);
-            }
-            else {
-                auto value = extractValue(future, err);
-                (cast(C)callbackFunc)(err, value);
-            }
+        static if (is(ReturnType!extractValue == void)) {
+            thiz.extractValue(cast(shared)f, err);
+            (cast(C)thiz.callbackFunc)(err);
+        }
+        else {
+            auto value = thiz.extractValue(cast(shared)f, err);
+            (cast(C)thiz.callbackFunc)(err, value);
         }
     }
 

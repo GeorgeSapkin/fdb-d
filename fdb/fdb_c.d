@@ -31,7 +31,7 @@ struct keyvalue {
 }
 alias FDBKeyValue = keyvalue;
 
-alias FDBCallback = void function(
+extern(C) alias FDBCallback = void function(
     FDBFuture *         future,
     void *              callback_parameter);
 
