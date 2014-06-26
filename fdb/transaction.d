@@ -48,7 +48,7 @@ class Transaction {
         // cancel, commit and reset are mutually exclusive
         synchronized (this) {
             auto f = fdb_transaction_commit(tr);
-            return startFuture!(VoidFuture, VoidFutureCallback)(f, callback);
+            return startFuture!VoidFuture(f, callback);
         }
     }
 
@@ -125,7 +125,7 @@ class Transaction {
             snapshot,
             reverse);
 
-        return startFuture!(KeyValueFuture, KeyValueFutureCallback)(f, callback);
+        return startFuture!KeyValueFuture(f, callback);
     }
 
     auto watch(Key key, VoidFutureCallback callback) {
@@ -133,7 +133,7 @@ class Transaction {
             tr,
             &key[0],
             cast(int)key.length);
-        return startFuture!(WatchFuture, VoidFutureCallback)(f, callback);
+        return startFuture!WatchFuture(f, callback);
     }
 
     private void addConflictRange(
@@ -161,7 +161,7 @@ class Transaction {
 
     auto onError(fdb_error_t err, VoidFutureCallback callback) {
         auto f = fdb_transaction_on_error(tr, err);
-        return startFuture!(VoidFuture, VoidFutureCallback)(f, callback);
+        return startFuture!VoidFuture(f, callback);
     }
 
     /* Resets transaction to its initial state
@@ -179,7 +179,7 @@ class Transaction {
 
     auto getReadVersion(VersionFutureCallback callback) {
         auto f = fdb_transaction_get_read_version(tr);
-        return startFuture!(VersionFuture, VersionFutureCallback)(f, callback);
+        return startFuture!VersionFuture(f, callback);
     }
 
     auto getCommittedVersion() {
@@ -201,7 +201,7 @@ class Transaction {
             &key[0],
             cast(int)key.length);
 
-        return startFuture!(StringFuture, StringFutureCallback)(f, callback);
+        return startFuture!StringFuture(f, callback);
     }
 
     /* Performs an addition of little-endian integers. If the existing value
