@@ -1,6 +1,8 @@
 module fdb.future;
 
 import std.algorithm,
+       std.array,
+       std.conv,
        std.exception,
        std.parallelism,
        std.traits;
@@ -10,7 +12,28 @@ import fdb.error,
 
 private alias PKey      = ubyte *;
 private alias PValue    = ubyte *;
-alias Records           = Value[Key];
+
+class Record {
+    immutable Key   key;
+    immutable Value value;
+
+    this(immutable Key key, immutable Value value) pure {
+        this.key   = key;
+        this.value = value;
+    }
+}
+
+class KeyValueResult {
+    Record[] records;
+    bool     more;
+
+    this(Record[] records, bool more) pure {
+        this.records = records;
+        this.more    = more;
+    }
+}
+
+alias FutureCallback(V) = void function(fdb_error_t err, V value);
 
 shared class Future(C, V) {
     private alias SF = shared(Future!(C, V));
@@ -23,7 +46,7 @@ shared class Future(C, V) {
 
     this(FutureHandle future, C callbackFunc) {
         this.future       = cast(shared)future;
-        this.callbackFunc = callbackFunc;
+        this.callbackFunc = cast(shared)callbackFunc;
     }
 
     ~this() {
@@ -59,11 +82,11 @@ shared class Future(C, V) {
         with (thiz) {
             static if (is(ReturnType!extractValue == void)) {
                 extractValue(future, err);
-                callbackFunc(err);
+                (cast(C)callbackFunc)(err);
             }
             else {
                 auto value = extractValue(future, err);
-                callbackFunc(err, value);
+                (cast(C)callbackFunc)(err, value);
             }
         }
     }
@@ -77,8 +100,10 @@ private mixin template FutureCtor(C) {
     }
 }
 
-shared class ValueFuture(C) : Future!(C, Value) {
-    mixin FutureCtor!C;
+alias ValueFutureCallback = FutureCallback!Value;
+
+shared class ValueFuture : Future!(ValueFutureCallback, Value) {
+    mixin FutureCtor!ValueFutureCallback;
 
     override Value extractValue(SH future, out SE err) {
         PValue value;
@@ -96,8 +121,10 @@ shared class ValueFuture(C) : Future!(C, Value) {
     }
 }
 
-shared class KeyFuture(C) : Future!(C, Key) {
-    mixin FutureCtor!C;
+alias KeyFutureCallback = FutureCallback!Key;
+
+shared class KeyFuture : Future!(KeyFutureCallback, Key) {
+    mixin FutureCtor!KeyFutureCallback;
 
     override Value extractValue(SH future, out SE err) {
         PKey key;
@@ -113,8 +140,10 @@ shared class KeyFuture(C) : Future!(C, Key) {
     }
 }
 
-shared class VoidFuture(C) : Future!(C, void) {
-    mixin FutureCtor!C;
+alias VoidFutureCallback = void function(fdb_error_t err);
+
+shared class VoidFuture : Future!(VoidFutureCallback, void) {
+    mixin FutureCtor!VoidFutureCallback;
 
     override void extractValue(SH future, out SE err) {
         err = fdb_future_get_error(
@@ -122,12 +151,14 @@ shared class VoidFuture(C) : Future!(C, void) {
     }
 }
 
-alias KeyValueResult = Tuple!(Records, bool);
-shared class KeyValueFuture(C) : Future!(C, KeyValueResult) {
-    mixin FutureCtor!C;
+alias KeyValueFutureCallback = FutureCallback!KeyValueResult;
+
+shared class KeyValueFuture
+    : Future!(KeyValueFutureCallback, KeyValueResult) {
+
+    mixin FutureCtor!KeyValueFutureCallback;
 
     override KeyValueResult extractValue(SH future, out SE err) {
-
         FDBKeyValue * kvs;
         int len;
         // Receives true if there are more result, or false if all results have
@@ -141,18 +172,24 @@ shared class KeyValueFuture(C) : Future!(C, KeyValueResult) {
         if (err != FDBError.NONE)
             return typeof(return).init;
 
-        auto tuples = reduce!
-            ((a, kv) => {
-                a[kv.key[0..kv.key_length]] = kv.value[0..kv.value_length];
-                return a;
-            })
-            (new Records, kvs[0..len]);
-        return Tuple!(tuples, cast(bool)more);
+        Record[] tuples = kvs[0..len]
+            .map!createRecord
+            .array;
+
+        return new KeyValueResult(tuples, cast(bool)more);
+    }
+
+    static Record createRecord(ref FDBKeyValue kv) pure {
+        auto key   = (cast(Key)  kv.key  [0..kv.key_length  ]).idup;
+        auto value = (cast(Value)kv.value[0..kv.value_length]).idup;
+        return new Record(key, value);
     }
 }
 
-shared class VersionFuture(C) : Future!(C, ulong) {
-    mixin FutureCtor!C;
+alias VersionFutureCallback = FutureCallback!ulong;
+
+shared class VersionFuture : Future!(VersionFutureCallback, ulong) {
+    mixin FutureCtor!VersionFutureCallback;
 
     override ulong extractValue(SH future, out SE err) {
         long ver;
@@ -165,12 +202,14 @@ shared class VersionFuture(C) : Future!(C, ulong) {
     }
 }
 
-shared class StringFuture(C) : Future!(C, string[]) {
-    mixin FutureCtor!C;
+alias StringFutureCallback = FutureCallback!(string[]);
+
+shared class StringFuture : Future!(StringFutureCallback, string[]) {
+    mixin FutureCtor!StringFutureCallback;
 
     override string[] extractValue(SH future, out SE err) {
-        ubyte ** stringArr;
-        int      count;
+        char ** stringArr;
+        int     count;
         err = fdb_future_get_string_array(
             cast(FutureHandle)future,
             &stringArr,
@@ -182,8 +221,8 @@ shared class StringFuture(C) : Future!(C, string[]) {
     }
 }
 
-shared class WatchFuture(C) : VoidFuture!C {
-    mixin FutureCtor!C;
+shared class WatchFuture : VoidFuture {
+    mixin FutureCtor!VoidFutureCallback;
 
     ~this() {
         cancel;
@@ -191,6 +230,6 @@ shared class WatchFuture(C) : VoidFuture!C {
 
     void cancel() {
         if (future)
-            fdb_future_cancel(future);
+            fdb_future_cancel(cast(FutureHandle)future);
     }
 }

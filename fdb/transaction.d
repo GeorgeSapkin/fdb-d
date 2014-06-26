@@ -17,11 +17,10 @@ struct Selector {
 class Transaction {
     private TransactionHandle tr;
 
-    private static auto start(F, C)(FDBFuture * f, C callback) pure {
-        auto _future = new F(f, callback);
-        //_future.start();
-        //return _future;
-        return 0;
+    private static auto startFuture(F, C)(FDBFuture * f, C callback) {
+        auto _future = new shared F(f, callback);
+        _future.start();
+        return _future;
     }
 
     this(TransactionHandle tr) {
@@ -45,11 +44,11 @@ class Transaction {
             cast(int)value.length);
     }
 
-    auto commit(C)(C callback) {
+    auto commit(VoidFutureCallback callback) {
         // cancel, commit and reset are mutually exclusive
         synchronized (this) {
-            FDBFuture * f = fdb_transaction_commit(tr);
-            return start!(VoidFuture!C)(f, callback);
+            auto f = fdb_transaction_commit(tr);
+            return startFuture!(VoidFuture, VoidFutureCallback)(f, callback);
         }
     }
 
@@ -66,10 +65,10 @@ class Transaction {
             cast(int)end.length);
     }
 
-    auto getKey(C)(
-        Selector    selector,
-        bool        snapshot,
-        C           callback) {
+    auto getKey(
+        Selector          selector,
+        bool              snapshot,
+        KeyFutureCallback callback) {
 
         auto f = fdb_transaction_get_key(
             tr,
@@ -79,28 +78,32 @@ class Transaction {
             selector.offset,
             cast(fdb_bool_t)snapshot);
 
-        return start!(KeyFuture!C)(f, callback);
+        return startFuture!KeyFuture(f, callback);
     }
 
-    auto get(C)(Key key, bool snapshot, C callback) {
+    auto get(
+        Key                 key,
+        bool                snapshot,
+        ValueFutureCallback callback) {
+
         auto f = fdb_transaction_get(
             tr,
             &key[0],
-            key.length,
+            cast(int)key.length,
             snapshot);
 
-        return start!(ValueFuture!C)(f, callback);
+        return startFuture!ValueFuture(f, callback);
     }
 
-    auto getRange(C)(
-        Selector      start,
-        Selector      end,
-        int           limit,
-        StreamingMode mode,
-        int           iteration,
-        bool          snapshot,
-        bool          reverse,
-        C             callback) {
+    auto getRange(
+        Selector               start,
+        Selector               end,
+        int                    limit,
+        StreamingMode          mode,
+        int                    iteration,
+        bool                   snapshot,
+        bool                   reverse,
+        KeyValueFutureCallback callback) {
 
         auto f = fdb_transaction_get_range(
             tr,
@@ -122,12 +125,15 @@ class Transaction {
             snapshot,
             reverse);
 
-        return start!(KeyValueFuture!C)(f, callback);
+        return startFuture!(KeyValueFuture, KeyValueFutureCallback)(f, callback);
     }
 
-    auto watch(C)(Key key, C callback) {
-        auto f = fdb_transaction_watch(tr, &key[0], key.length);
-        return start!WatchFuture(callback);
+    auto watch(Key key, VoidFutureCallback callback) {
+        auto f = fdb_transaction_watch(
+            tr,
+            &key[0],
+            cast(int)key.length);
+        return startFuture!(WatchFuture, VoidFutureCallback)(f, callback);
     }
 
     private void addConflictRange(
@@ -153,9 +159,9 @@ class Transaction {
         addConflictRange(start, end, ConflictRangeType.WRITE);
     }
 
-    auto onError(C)(fdb_error_t err, C callback) {
+    auto onError(fdb_error_t err, VoidFutureCallback callback) {
         auto f = fdb_transaction_on_error(tr, err);
-        return start!(VoidFuture!C)(f, callback);
+        return startFuture!(VoidFuture, VoidFutureCallback)(f, callback);
     }
 
     /* Resets transaction to its initial state
@@ -171,9 +177,9 @@ class Transaction {
         fdb_transaction_set_read_version(tr, ver);
     }
 
-    auto getReadVersion(C)(C callback) {
-        FDBFuture * f = fdb_transaction_get_read_version(tr);
-        return start!(VersionFuture!C)(f, callback);
+    auto getReadVersion(VersionFutureCallback callback) {
+        auto f = fdb_transaction_get_read_version(tr);
+        return startFuture!(VersionFuture, VersionFutureCallback)(f, callback);
     }
 
     auto getCommittedVersion() {
@@ -189,13 +195,13 @@ class Transaction {
         }
     }
 
-    auto getAddressesForKey(C)(Key key, C callback) {
+    auto getAddressesForKey(Key key, StringFutureCallback callback) {
         auto f = fdb_transaction_get_addresses_for_key(
             tr,
             &key[0],
-            key.length);
+            cast(int)key.length);
 
-        return start!(StringFuture!C)(f, callback);
+        return startFuture!(StringFuture, StringFutureCallback)(f, callback);
     }
 
     /* Performs an addition of little-endian integers. If the existing value
