@@ -80,13 +80,15 @@ shared class Future(C, V) {
         scope (exit) delete thiz;
 
         shared fdb_error_t err;
-        static if (is(ReturnType!extractValue == void)) {
-            thiz.extractValue(cast(shared)f, err);
-            (cast(C)thiz.callbackFunc)(err);
-        }
-        else {
-            auto value = thiz.extractValue(cast(shared)f, err);
-            (cast(C)thiz.callbackFunc)(err, value);
+        with (thiz) {
+            static if (is(ReturnType!extractValue == void)) {
+                extractValue(cast(shared)f, err);
+                (cast(C)callbackFunc)(err);
+            }
+            else {
+                auto value = extractValue(cast(shared)f, err);
+                (cast(C)callbackFunc)(err, value);
+            }
         }
     }
 
