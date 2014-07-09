@@ -1,6 +1,7 @@
 module fdb.fdb_c;
 
-import fdb.fdb_c_options;
+import
+    fdb.fdb_c_options;
 
 immutable uint FDB_API_VERSION = 200;
 
@@ -22,7 +23,8 @@ alias fdb_bool_t        = int;
 alias Key               = ubyte[];
 alias Value             = ubyte[];
 
-struct keyvalue {
+struct keyvalue
+{
     align (4):
         void * key;
         int    key_length;
@@ -31,7 +33,8 @@ struct keyvalue {
 }
 alias FDBKeyValue = keyvalue;
 
-fdb_error_t     fdb_select_api_version(int runtime_version) {
+fdb_error_t     fdb_select_api_version(int runtime_version)
+{
     return fdb_select_api_version_impl(runtime_version, FDB_API_VERSION);
 }
 

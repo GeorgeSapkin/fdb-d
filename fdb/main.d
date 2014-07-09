@@ -1,56 +1,65 @@
 module fdb.main;
 
-import std.array,
-       std.conv,
-       std.exception,
-       std.format,
-       std.parallelism,
-       std.string;
+import
+    std.array,
+    std.conv,
+    std.exception,
+    std.format,
+    std.parallelism,
+    std.string;
 
-import fdb.cluster,
-       fdb.error,
-       fdb.fdb_c,
-       fdb.fdb_c_options,
-       fdb.networkoptions;
+import
+    fdb.cluster,
+    fdb.error,
+    fdb.fdb_c,
+    fdb.fdb_c_options,
+    fdb.networkoptions;
 
 private shared auto networkStarted = false;
 private Task!(networkThread) * networkTask;
 
 private auto FBD_RUNTIME_API_VERSION = 200;
 
-shared static this() {
+shared static this()
+{
     selectAPIVersion(FBD_RUNTIME_API_VERSION);
 }
 
-void selectAPIVersion(int apiVersion) {
+void selectAPIVersion(int apiVersion)
+{
     enforceError(fdb_select_api_version(apiVersion));
 }
 
-auto networkThread() {
+auto networkThread()
+{
     return fdb_run_network();
 }
 
-private void runNetwork() {
+private void runNetwork()
+{
     NetworkOptions.init;
     enforceError(fdb_setup_network);
     networkTask = task!networkThread;
     networkTask.executeInNewThread;
 }
 
-void startNetwork() {
+void startNetwork()
+{
     if (networkStarted) return;
     runNetwork();
     networkStarted = true;
 }
 
-void stopNetwork() {
+void stopNetwork()
+{
     enforceError(fdb_stop_network);
     if (networkTask)
         enforceError(networkTask.yieldForce);
     networkStarted = false;
 }
 
-auto createCluster(string clusterFilePath) {
+auto createCluster(string clusterFilePath)
+{
     const FDBFuture * f = fdb_create_cluster(clusterFilePath.toStringz);
     enforceError(fdb_future_block_until_ready(f));
 

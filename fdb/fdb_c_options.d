@@ -1,6 +1,7 @@
 module fdb.fdb_c_options;
 
-enum NetworkOption : uint {
+enum NetworkOption : uint
+{
     // deprecated
     NONE				= 0,
 
@@ -54,7 +55,8 @@ enum NetworkOption : uint {
     TLS_VERIFY_PEERS,
 }
 
-enum ClusterOption : uint {
+enum ClusterOption : uint
+{
     /* This option is only a placeholder for C compatibility and should not be
      * used
      * Parameter: Option takes no parameter
@@ -62,7 +64,8 @@ enum ClusterOption : uint {
     DUMMY_DO_NOT_USE = -1,
 }
 
-enum DatabaseOption : uint {
+enum DatabaseOption : uint
+{
     /* Set the size of the client location cache. Raising this value can boost
      * performance in very large databases where clients access data in a near-
      * random pattern. Defaults to 100000.
@@ -93,7 +96,8 @@ enum DatabaseOption : uint {
     DATACENTER_ID,
 }
 
-enum TransactionOption : uint {
+enum TransactionOption : uint
+{
     /* The transaction, if not self-conflicting, may be committed a second time
      * after commit succeeds, in the event of a fault
      * Parameter: Option takes no parameter
@@ -207,7 +211,8 @@ enum TransactionOption : uint {
     RETRY_LIMIT,
 }
 
-enum StreamingMode : int {
+enum StreamingMode : int
+{
     /* Client intends to consume the entire range and would like it all
      *transferred as early as possible.
      */
@@ -257,7 +262,8 @@ enum StreamingMode : int {
     SERIAL,
 }
 
-enum MutationType : uint {
+enum MutationType : uint
+{
     /* Performs an addition of little-endian integers. If the existing value in
      * the database is not present or shorter than ``param``, it is first
      * extended to the length of ``param`` with zero bytes.  If ``param`` is
@@ -306,7 +312,8 @@ enum MutationType : uint {
     BIT_XOR = 8,
 }
 
-enum ConflictRangeType : uint {
+enum ConflictRangeType : uint
+{
     /* Used to add a read conflict range
      */
     READ,

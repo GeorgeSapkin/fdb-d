@@ -1,41 +1,50 @@
 module fdb.transaction;
 
-import std.conv,
-       std.exception;
+import
+    std.conv,
+    std.exception;
 
-import fdb.error,
-       fdb.fdb_c,
-       fdb.fdb_c_options,
-       fdb.future;
+import
+    fdb.error,
+    fdb.fdb_c,
+    fdb.fdb_c_options,
+    fdb.future;
 
-struct Selector {
+struct Selector
+{
     Key  key;
     bool orEqual;
     int  offset;
 }
 
-class Transaction {
+class Transaction
+{
     private TransactionHandle tr;
 
-    private static auto startFuture(F, C)(FDBFuture * f, C callback) {
+    private static auto startFuture(F, C)(FDBFuture * f, C callback)
+    {
         auto _future = new shared F(f, callback);
         _future.start();
         return _future;
     }
 
-    this(TransactionHandle tr) {
+    this(TransactionHandle tr)
+    {
         this.tr = tr;
     }
 
-    ~this() {
+    ~this()
+    {
         destroy;
     }
 
-    void destroy() {
+    void destroy()
+    {
         fdb_transaction_destroy(tr);
     }
 
-    void set(Key key, Value value) {
+    void set(Key key, Value value)
+    {
         fdb_transaction_set(
             tr,
             &key[0],
@@ -44,19 +53,23 @@ class Transaction {
             cast(int)value.length);
     }
 
-    auto commit(VoidFutureCallback callback) {
+    auto commit(VoidFutureCallback callback)
+    {
         // cancel, commit and reset are mutually exclusive
-        synchronized (this) {
+        synchronized (this)
+        {
             auto f = fdb_transaction_commit(tr);
             return startFuture!VoidFuture(f, callback);
         }
     }
 
-    void clear(Key key) {
+    void clear(Key key)
+    {
         fdb_transaction_clear(tr, &key[0], cast(int)key.length);
     }
 
-    void clearRange(Key begin, Key end) {
+    void clearRange(Key begin, Key end)
+    {
         fdb_transaction_clear_range(
             tr,
             &begin[0],
@@ -68,7 +81,8 @@ class Transaction {
     auto getKey(
         Selector          selector,
         bool              snapshot,
-        KeyFutureCallback callback) {
+        KeyFutureCallback callback)
+    {
 
         auto f = fdb_transaction_get_key(
             tr,
@@ -84,7 +98,8 @@ class Transaction {
     auto get(
         Key                 key,
         bool                snapshot,
-        ValueFutureCallback callback) {
+        ValueFutureCallback callback)
+    {
 
         auto f = fdb_transaction_get(
             tr,
@@ -103,7 +118,8 @@ class Transaction {
         int                    iteration,
         bool                   snapshot,
         bool                   reverse,
-        KeyValueFutureCallback callback) {
+        KeyValueFutureCallback callback)
+    {
 
         auto f = fdb_transaction_get_range(
             tr,
@@ -128,7 +144,8 @@ class Transaction {
         return startFuture!KeyValueFuture(f, callback);
     }
 
-    auto watch(Key key, VoidFutureCallback callback) {
+    auto watch(Key key, VoidFutureCallback callback)
+    {
         auto f = fdb_transaction_watch(
             tr,
             &key[0],
@@ -139,7 +156,8 @@ class Transaction {
     private void addConflictRange(
         Key               start,
         Key               end,
-        ConflictRangeType type) {
+        ConflictRangeType type)
+    {
 
         auto err = fdb_transaction_add_conflict_range(
             tr,
@@ -151,51 +169,62 @@ class Transaction {
         enforceError(err);
     }
 
-    void addReadConflictRange(Key start, Key end) {
+    void addReadConflictRange(Key start, Key end)
+    {
         addConflictRange(start, end, ConflictRangeType.READ);
     }
 
-    void addWriteConflictRange(Key start, Key end) {
+    void addWriteConflictRange(Key start, Key end)
+    {
         addConflictRange(start, end, ConflictRangeType.WRITE);
     }
 
-    auto onError(fdb_error_t err, VoidFutureCallback callback) {
+    auto onError(fdb_error_t err, VoidFutureCallback callback)
+    {
         auto f = fdb_transaction_on_error(tr, err);
         return startFuture!VoidFuture(f, callback);
     }
 
     /* Resets transaction to its initial state
      */
-    void reset() {
+    void reset()
+    {
         // cancel, commit and reset are mutually exclusive
-        synchronized (this) {
+        synchronized (this)
+        {
             fdb_transaction_reset(tr);
         }
     }
 
-    void setReadVersion(int ver) {
+    void setReadVersion(int ver)
+    {
         fdb_transaction_set_read_version(tr, ver);
     }
 
-    auto getReadVersion(VersionFutureCallback callback) {
+    auto getReadVersion(VersionFutureCallback callback)
+    {
         auto f = fdb_transaction_get_read_version(tr);
         return startFuture!VersionFuture(f, callback);
     }
 
-    auto getCommittedVersion() {
+    auto getCommittedVersion()
+    {
         long ver;
         enforceError(fdb_transaction_get_committed_version(tr, &ver));
         return ver;
     }
 
-    void cancel() {
+    void cancel()
+    {
         // cancel, commit and reset are mutually exclusive
-        synchronized (this) {
+        synchronized (this)
+        {
             fdb_transaction_cancel(tr);
         }
     }
 
-    auto getAddressesForKey(Key key, StringFutureCallback callback) {
+    auto getAddressesForKey(Key key, StringFutureCallback callback)
+    {
         auto f = fdb_transaction_get_addresses_for_key(
             tr,
             &key[0],
@@ -216,7 +245,8 @@ class Transaction {
      * of the value. However, this offset technique requires that you know the
      * addition will not cause the integer field within the value to overflow.
      */
-    void add(Key key, Value value) {
+    void add(Key key, Value value)
+    {
         callAtomicOperation(key, value, MutationType.ADD);
     }
 
@@ -229,7 +259,8 @@ class Transaction {
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitAnd(Key key, Value value) {
+    void bitAnd(Key key, Value value)
+    {
         callAtomicOperation(key, value, MutationType.BIT_AND);
     }
 
@@ -242,7 +273,8 @@ class Transaction {
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitOr(Key key, Value value) {
+    void bitOr(Key key, Value value)
+    {
         callAtomicOperation(key, value, MutationType.BIT_OR);
     }
 
@@ -255,7 +287,8 @@ class Transaction {
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitXor(Key key, Value value) {
+    void bitXor(Key key, Value value)
+    {
         callAtomicOperation(key, value, MutationType.BIT_XOR);
     }
 
@@ -277,7 +310,8 @@ class Transaction {
      * after commit succeeds, in the event of a fault
      * Parameter: Option takes no parameter
      */
-    void setCausalWriteRisky() {
+    void setCausalWriteRisky()
+    {
         setTransactionOption(TransactionOption.CAUSAL_WRITE_RISKY);
     }
 
@@ -286,12 +320,14 @@ class Transaction {
      * or partition
      * Parameter: Option takes no parameter
      */
-    void setCausalReadRisky() {
+    void setCausalReadRisky()
+    {
         setTransactionOption(TransactionOption.CAUSAL_READ_RISKY);
     }
 
     // Parameter: Option takes no parameter
-    void setCausalReadDisable() {
+    void setCausalReadDisable()
+    {
         setTransactionOption(TransactionOption.CAUSAL_READ_DISABLE);
     }
 
@@ -304,13 +340,15 @@ class Transaction {
      * thread it is on.
      * Parameter: Option takes no parameter
      */
-    void setNextWriteNoWriteConflictRange() {
+    void setNextWriteNoWriteConflictRange()
+    {
         setTransactionOption(
             TransactionOption.NEXT_WRITE_NO_WRITE_CONFLICT_RANGE);
     }
 
     // Parameter: Option takes no parameter
-    void setCheckWritesEnable() {
+    void setCheckWritesEnable()
+    {
         setTransactionOption(TransactionOption.CHECK_WRITES_ENABLE);
     }
 
@@ -322,7 +360,8 @@ class Transaction {
      * tend to read and write the same keys within a single transaction.
      * Parameter: Option takes no parameter
      */
-    void setReadYourWritesDisable() {
+    void setReadYourWritesDisable()
+    {
         setTransactionOption(TransactionOption.READ_YOUR_WRITES_DISABLE);
     }
 
@@ -333,22 +372,26 @@ class Transaction {
      * read starting immediately after the result of the first).
      * Parameter: Option takes no parameter
      */
-    void setReadAheadDisable() {
+    void setReadAheadDisable()
+    {
         setTransactionOption(TransactionOption.READ_AHEAD_DISABLE);
     }
 
     // Parameter: Option takes no parameter
-    void setDurabilityDatacenter() {
+    void setDurabilityDatacenter()
+    {
         setTransactionOption(TransactionOption.DURABILITY_DATACENTER);
     }
 
     // Parameter: Option takes no parameter
-    void setDurabilityRisky() {
+    void setDurabilityRisky()
+    {
         setTransactionOption(TransactionOption.DURABILITY_RISKY);
     }
 
     // Parameter: Option takes no parameter
-    void setDurabilityDevNullIsWebScale() {
+    void setDurabilityDevNullIsWebScale()
+    {
         setTransactionOption(
             TransactionOption.DURABILITY_DEV_NULL_IS_WEB_SCALE);
     }
@@ -358,7 +401,8 @@ class Transaction {
      * discouraged outside of low-level tools
      * Parameter: Option takes no parameter
      */
-    void setPrioritySystemImmediate() {
+    void setPrioritySystemImmediate()
+    {
         setTransactionOption(TransactionOption.PRIORITY_SYSTEM_IMMEDIATE);
     }
 
@@ -367,14 +411,16 @@ class Transaction {
      * doing batch work simultaneously with latency-sensitive work
      * Parameter: Option takes no parameter
      */
-    void setPriorityBatch() {
+    void setPriorityBatch()
+    {
         setTransactionOption(TransactionOption.PRIORITY_BATCH);
     }
 
     /* This is a write-only transaction which sets the initial configuration
      * Parameter: Option takes no parameter
      */
-    void setInitializeNewDatabase() {
+    void setInitializeNewDatabase()
+    {
         setTransactionOption(TransactionOption.INITIALIZE_NEW_DATABASE);
     }
 
@@ -382,12 +428,14 @@ class Transaction {
      * with the byte 0xFF)
      * Parameter: Option takes no parameter
      */
-    void setAccessSystemKeys() {
+    void setAccessSystemKeys()
+    {
         setTransactionOption(TransactionOption.ACCESS_SYSTEM_KEYS);
     }
 
     // Parameter: Option takes no parameter
-    void setDebugDump() {
+    void setDebugDump()
+    {
         setTransactionOption(TransactionOption.DEBUG_DUMP);
     }
 
@@ -398,7 +446,8 @@ class Transaction {
      * transaction can be used again after it is reset.
      * Parameter: (Int) value in milliseconds of timeout
      */
-    void setTimeout(long value) {
+    void setTimeout(long value)
+    {
         setTransactionOption(TransactionOption.TIMEOUT, value);
     }
 
@@ -407,15 +456,18 @@ class Transaction {
      * ``[-1, INT_MAX]``. If set to -1, will disable the retry limit.
      * Parameter: (Int) number of times to retry
      */
-    void setRetryLimit(long value) {
+    void setRetryLimit(long value)
+    {
         setTransactionOption(TransactionOption.RETRY_LIMIT, value);
     }
 
-    private void setTransactionOption(TransactionOption op) {
+    private void setTransactionOption(TransactionOption op)
+    {
         enforceError(fdb_transaction_set_option(tr, op, null, 0));
     }
 
-    private void setTransactionOption(TransactionOption op, long value) {
+    private void setTransactionOption(TransactionOption op, long value)
+    {
         auto err = fdb_transaction_set_option(
             tr,
             op,

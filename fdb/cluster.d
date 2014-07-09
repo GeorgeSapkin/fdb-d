@@ -1,29 +1,36 @@
 module fdb.cluster;
 
-import std.conv,
-       std.exception,
-       std.string;
+import
+    std.conv,
+    std.exception,
+    std.string;
 
-import fdb.database,
-       fdb.error,
-       fdb.fdb_c;
+import
+    fdb.database,
+    fdb.error,
+    fdb.fdb_c;
 
-class Cluster {
+class Cluster
+{
     private ClusterHandle cluster;
 
-    this(ClusterHandle cluster) {
+    this(ClusterHandle cluster)
+    {
         this.cluster = cluster;
     }
 
-    ~this() {
+    ~this()
+    {
         destroy;
     }
 
-    void destroy() {
+    void destroy()
+    {
         fdb_cluster_destroy(cluster);
     }
 
-    auto openDatabase(string dbName) {
+    auto openDatabase(string dbName)
+    {
         auto f = fdb_cluster_create_database(
             cluster,
             dbName.toStringz(),

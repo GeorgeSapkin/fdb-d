@@ -9,7 +9,8 @@ import
     fdb.tuple.integral,
     fdb.tuple.tupletype;
 
-private class Packer {
+private class Packer
+{
     ubyte[] bytes;
 
     void write(T)(const T value)

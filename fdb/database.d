@@ -1,30 +1,37 @@
 module fdb.database;
 
-import std.conv,
-       std.exception,
-       std.string;
+import
+    std.conv,
+    std.exception,
+    std.string;
 
-import fdb.error,
-       fdb.fdb_c,
-       fdb.fdb_c_options,
-       fdb.transaction;
+import
+    fdb.error,
+    fdb.fdb_c,
+    fdb.fdb_c_options,
+    fdb.transaction;
 
-class Database {
+class Database
+{
     private DatabaseHandle db;
 
-    this(DatabaseHandle db) {
+    this(DatabaseHandle db)
+    {
         this.db = db;
     }
 
-    ~this() {
+    ~this()
+    {
         destroy;
     }
 
-    void destroy() {
+    void destroy()
+    {
         fdb_database_destroy(db);
     }
 
-    auto createTransaction() {
+    auto createTransaction()
+    {
         TransactionHandle tr;
         enforceError(fdb_database_create_transaction(db, &tr));
         return new Transaction(tr);
@@ -35,7 +42,8 @@ class Database {
      * random pattern. Defaults to 100000.
      * Parameter: (Int) Max location cache entries
      */
-    void setLocationCacheSize(long value) {
+    void setLocationCacheSize(long value)
+    {
         setDatabaseOption(DatabaseOption.LOCATION_CACHE_SIZE, value);
     }
 
@@ -45,7 +53,8 @@ class Database {
      * Defaults to 10000 and cannot be larger than 1000000.
      * Parameter: (Int) Max outstanding watches
      */
-    void setMaxWatches(long value) {
+    void setMaxWatches(long value)
+    {
         setDatabaseOption(DatabaseOption.MAX_WATCHES, value);
     }
 
@@ -54,7 +63,8 @@ class Database {
      * balancing.
      * Parameter: (String) Hexadecimal ID
      */
-    void setMachineId(string value) {
+    void setMachineId(string value)
+    {
         setDatabaseOption(DatabaseOption.MACHINE_ID, value);
     }
 
@@ -63,11 +73,13 @@ class Database {
      * balancing.
      * Parameter: (String) Hexadecimal ID
      */
-    void setDatacenterId(string value) {
+    void setDatacenterId(string value)
+    {
         setDatabaseOption(DatabaseOption.DATACENTER_ID, value);
     }
 
-    private void setDatabaseOption(DatabaseOption op, long value) {
+    private void setDatabaseOption(DatabaseOption op, long value)
+    {
         auto err = fdb_database_set_option(
             db,
             op,
@@ -76,7 +88,8 @@ class Database {
         enforceError(err);
     }
 
-    private void setDatabaseOption(DatabaseOption op, string value) {
+    private void setDatabaseOption(DatabaseOption op, string value)
+    {
         auto err = fdb_database_set_option(
             db,
             op,

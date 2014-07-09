@@ -1,15 +1,19 @@
 module fdb.networkoptions;
 
-import std.conv,
-       std.exception,
-       std.string;
+import
+    std.conv,
+    std.exception,
+    std.string;
 
-import fdb.error,
-       fdb.fdb_c,
-       fdb.fdb_c_options;
+import
+    fdb.error,
+    fdb.fdb_c,
+    fdb.fdb_c_options;
 
-class NetworkOptions {
-    static void init() {
+class NetworkOptions
+{
+    static void init()
+    {
         setNetworkOption(NetworkOption.NONE);
     }
 
@@ -25,14 +29,16 @@ class NetworkOptions {
      * Parameter: (String) path to output directory (or NULL for current working
      * directory)
      */
-    static void setTraceEnable(string value) {
+    static void setTraceEnable(string value)
+    {
         setNetworkOption(NetworkOption.TRACE_ENABLE, value);
     }
 
     /* Set internal tuning or debugging knobs
      * Parameter: (String) knob_name=knob_value
      */
-    static void setKnob(string value) {
+    static void setKnob(string value)
+    {
         setNetworkOption(NetworkOption.KNOB, value);
     }
 
@@ -40,28 +46,32 @@ class NetworkOptions {
      * other TLS options
      * Parameter: (String) file path or linker-resolved name
      */
-    static void setTlsPlugin(string value) {
+    static void setTlsPlugin(string value)
+    {
         setNetworkOption(NetworkOption.TLS_PLUGIN, value);
     }
 
     /* Set the certificate chain
      * Parameter: (Bytes) certificates
      */
-    static void setTlsCertBytes(ubyte[] value) {
+    static void setTlsCertBytes(ubyte[] value)
+    {
         setNetworkOption(NetworkOption.TLS_CERT_BYTES, value);
     }
 
     /* Set the file from which to load the certificate chain
      * Parameter: (String) file path
      */
-    static void setTlsCertPath(string value) {
+    static void setTlsCertPath(string value)
+    {
         setNetworkOption(NetworkOption.TLS_CERT_PATH, value);
     }
 
     /* Set the private key corresponding to your own certificate
      * Parameter: (Bytes) key
      */
-    static void setTlsKeyBytes(ubyte[] value) {
+    static void setTlsKeyBytes(ubyte[] value)
+    {
         setNetworkOption(NetworkOption.TLS_KEY_BYTES, value);
     }
 
@@ -69,7 +79,8 @@ class NetworkOptions {
      * certificate
      * Parameter: (String) file path
      */
-    static void setTlsKeyPath(string value) {
+    static void setTlsKeyPath(string value)
+    {
         setNetworkOption(NetworkOption.TLS_KEY_PATH, value);
     }
 
@@ -80,11 +91,13 @@ class NetworkOptions {
         setNetworkOption(NetworkOption.TLS_VERIFY_PEERS, value);
     }
 
-    private static void setNetworkOption(NetworkOption op) {
+    private static void setNetworkOption(NetworkOption op)
+    {
         enforceError(fdb_network_set_option(op, null, 0));
     }
 
-    private static void setNetworkOption(NetworkOption op, ubyte[] value) {
+    private static void setNetworkOption(NetworkOption op, ubyte[] value)
+    {
         fdb_error_t err = fdb_network_set_option(
             op,
             cast(immutable(char)*)value,
@@ -92,7 +105,8 @@ class NetworkOptions {
         enforceError(err);
     }
 
-    private static void setNetworkOption(NetworkOption op, string value) {
+    private static void setNetworkOption(NetworkOption op, string value)
+    {
         fdb_error_t err = fdb_network_set_option(
             op,
             value.toStringz,

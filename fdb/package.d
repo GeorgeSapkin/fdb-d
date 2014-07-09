@@ -1,6 +1,6 @@
 module fdb;
 
-public:
+public
     import
         fdb.cluster,
         fdb.database,
