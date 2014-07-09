@@ -14,13 +14,19 @@ enum TupleType : ubyte {
      */
     Bytes           = 1,
 
-    /// <summary>UTF-8 String</summary>
+    /**
+     * UTF-8 String
+     */
     Utf8            = 2,
 
-    /// <summary>Nested tuple [DRAFT]</summary>
+    /**
+     * Nested tuple [DRAFT]
+     */
     TupleStart      = 3,
 
-    /// <summary>End of a nested tuple [DRAFT]</summary>
+    /**
+     * End of a nested tuple [DRAFT]
+     */
     TupleEnd        = 4,
 
     IntNeg8         = 12,
@@ -32,7 +38,9 @@ enum TupleType : ubyte {
     IntNeg2         = 18,
     IntNeg1         = 19,
 
-    /// <summary>Base value for integer types (20 +/- n)</summary>
+    /**
+     * <summary>Base value for integer types (20 +/- n)
+     */
     IntBase         = 20,
     IntZero         = 20,
 
@@ -45,15 +53,19 @@ enum TupleType : ubyte {
     IntPos7         = 27,
     IntPos8         = 28,
 
-    /// <summary>RFC4122 UUID (128 bits) [DRAFT]</summary>
+    /**
+     * RFC4122 UUID (128 bits) [DRAFT]
+     */
     Guid            = 48,
 
-    /// <summary>Standard prefix of the Directory Layer</summary>
-    /// <remarks>This is not a part of the tuple encoding itself, but helps the tuple decoder pretty-print tuples that would otherwise be unparsable.</remarks>
+    /**
+     * Standard prefix of the Directory Layer
+     */
     AliasDirectory  = 254,
 
-    /// <summary>Standard prefix of the System keys, or frequent suffix with key ranges</summary>
-    /// <remarks>This is not a part of the tuple encoding itself, but helps the tuple decoder pretty-print End keys from ranges, that would otherwise be unparsable.</remarks>
+    /**
+     * Standard prefix of the System keys, or frequent suffix with key ranges
+     */
     AliasSystem     = 255
 }
 
