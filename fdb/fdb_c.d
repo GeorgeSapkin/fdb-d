@@ -147,32 +147,32 @@ fdb_error_t     fdb_database_create_transaction(
     FDBTransaction **   out_transaction);
 
 void            fdb_transaction_destroy(
-    FDBTransaction *    tr);
+    const(FDBTransaction *) tr);
 
 void            fdb_transaction_cancel(
-    FDBTransaction *    tr);
+    const(FDBTransaction *) tr);
 
 fdb_error_t     fdb_transaction_set_option(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     TransactionOption   option,
     immutable(char) *   value,
     int                 value_length);
 
 void            fdb_transaction_set_read_version(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     long                versionNumber);
 
 FDBFuture *     fdb_transaction_get_read_version(
-    FDBTransaction *    tr);
+    const(FDBTransaction *) tr);
 
 FDBFuture *     fdb_transaction_get(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             key_name,
     int                 key_name_length,
     fdb_bool_t          snapshot);
 
 FDBFuture *     fdb_transaction_get_key(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             key_name,
     int                 key_name_length,
     fdb_bool_t          or_equal,
@@ -180,12 +180,12 @@ FDBFuture *     fdb_transaction_get_key(
     fdb_bool_t          snapshot);
 
 FDBFuture *     fdb_transaction_get_addresses_for_key(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             key_name,
     int                 key_name_length);
 
 FDBFuture *     fdb_transaction_get_range(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             begin_key_name,
     int                 begin_key_name_length,
     fdb_bool_t          begin_or_equal,
@@ -202,14 +202,14 @@ FDBFuture *     fdb_transaction_get_range(
     fdb_bool_t          reverse);
 
 void            fdb_transaction_set(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             key_name,
     int                 key_name_length,
     ubyte *             value,
     int                 value_length);
 
 void            fdb_transaction_atomic_op(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             key_name,
     int                 key_name_length,
     ubyte *             param,
@@ -217,38 +217,38 @@ void            fdb_transaction_atomic_op(
     MutationType        operation_type);
 
 void            fdb_transaction_clear(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             key_name,
     int                 key_name_length);
 
 void            fdb_transaction_clear_range(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             begin_key_name,
     int                 begin_key_name_length,
     ubyte *             end_key_name,
     int                 end_key_name_length);
 
 FDBFuture *     fdb_transaction_watch(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             key_name,
     int                 key_name_length);
 
 FDBFuture *     fdb_transaction_commit(
-    FDBTransaction *    tr);
+    const(FDBTransaction *) tr);
 
 fdb_error_t     fdb_transaction_get_committed_version(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     long *              out_version);
 
 FDBFuture *     fdb_transaction_on_error(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     fdb_error_t         error);
 
 void            fdb_transaction_reset(
-    FDBTransaction *    tr);
+    const(FDBTransaction *) tr);
 
 fdb_error_t     fdb_transaction_add_conflict_range(
-    FDBTransaction *    tr,
+    const(FDBTransaction *) tr,
     ubyte *             begin_key_name,
     int                 begin_key_name_length,
     ubyte *             end_key_name,

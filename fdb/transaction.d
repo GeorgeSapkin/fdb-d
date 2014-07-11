@@ -28,7 +28,7 @@ class Transaction
         return _future;
     }
 
-    this(TransactionHandle tr)
+    this(const TransactionHandle tr)
     {
         this.tr = tr;
     }
@@ -59,7 +59,8 @@ class Transaction
         synchronized (this)
         {
             auto f = fdb_transaction_commit(tr);
-            return startFuture!VoidFuture(f, callback);
+            auto _future = startFuture!VoidFuture(f, callback);
+            return _future;
         }
     }
 
@@ -113,7 +114,8 @@ class Transaction
             selector.offset,
             cast(fdb_bool_t)snapshot);
 
-        return startFuture!KeyFuture(f, callback);
+        auto _future = startFuture!KeyFuture(f, callback);
+        return _future;
     }
 
     auto get(
@@ -128,7 +130,8 @@ class Transaction
             cast(int)key.length,
             snapshot);
 
-        return startFuture!ValueFuture(f, callback);
+        auto _future = startFuture!ValueFuture(f, callback);
+        return _future;
     }
 
     auto getRange(
@@ -162,7 +165,8 @@ class Transaction
             snapshot,
             reverse);
 
-        return startFuture!KeyValueFuture(f, callback);
+        auto _future = startFuture!KeyValueFuture(f, callback);
+        return _future;
     }
 
     auto watch(Key key, VoidFutureCallback callback)
@@ -171,7 +175,8 @@ class Transaction
             tr,
             &key[0],
             cast(int)key.length);
-        return startFuture!WatchFuture(f, callback);
+        auto _future = startFuture!WatchFuture(f, callback);
+        return _future;
     }
 
     private void addConflictRange(
@@ -203,7 +208,8 @@ class Transaction
     auto onError(fdb_error_t err, VoidFutureCallback callback)
     {
         auto f = fdb_transaction_on_error(tr, err);
-        return startFuture!VoidFuture(f, callback);
+        auto _future = startFuture!VoidFuture(f, callback);
+        return _future;
     }
 
     void setReadVersion(int ver)
@@ -214,7 +220,8 @@ class Transaction
     auto getReadVersion(VersionFutureCallback callback)
     {
         auto f = fdb_transaction_get_read_version(tr);
-        return startFuture!VersionFuture(f, callback);
+        auto _future = startFuture!VersionFuture(f, callback);
+        return _future;
     }
 
     auto getCommittedVersion()
@@ -231,7 +238,8 @@ class Transaction
             &key[0],
             cast(int)key.length);
 
-        return startFuture!StringFuture(f, callback);
+        auto _future = startFuture!StringFuture(f, callback);
+        return _future;
     }
 
     /* Performs an addition of little-endian integers. If the existing value
