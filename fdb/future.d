@@ -81,6 +81,11 @@ shared class Future(C, V)
         enforceError(err);
     }
 
+    void blockUntilReady()
+    {
+        enforceError(fdb_future_block_until_ready(cast(FutureHandle)future));
+    }
+
     extern(C) static void futureReady(SH f, SF thiz)
     {
         thread_attachThis;
