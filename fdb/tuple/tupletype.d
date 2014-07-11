@@ -39,7 +39,7 @@ enum TupleType : ubyte {
     IntNeg1         = 19,
 
     /**
-     * <summary>Base value for integer types (20 +/- n)
+     * Base value for integer types (20 +/- n)
      */
     IntBase         = 20,
     IntZero         = 20,
