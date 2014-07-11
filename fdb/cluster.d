@@ -29,7 +29,7 @@ class Cluster
         fdb_cluster_destroy(cluster);
     }
 
-    auto openDatabase(string dbName)
+    auto openDatabase(string dbName = "DB")
     {
         auto f = fdb_cluster_create_database(
             cluster,
