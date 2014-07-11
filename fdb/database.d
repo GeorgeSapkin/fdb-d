@@ -37,7 +37,8 @@ class Database
         return new Transaction(tr);
     }
 
-    /* Set the size of the client location cache. Raising this value can boost
+    /**
+     * Set the size of the client location cache. Raising this value can boost
      * performance in very large databases where clients access data in a near-
      * random pattern. Defaults to 100000.
      * Parameter: (Int) Max location cache entries
@@ -47,7 +48,8 @@ class Database
         setDatabaseOption(DatabaseOption.LOCATION_CACHE_SIZE, value);
     }
 
-    /* Set the maximum number of watches allowed to be outstanding on a database
+    /**
+     * Set the maximum number of watches allowed to be outstanding on a database
      * connection. Increasing this number could result in increased resource
      * usage. Reducing this number will not cancel any outstanding watches.
      * Defaults to 10000 and cannot be larger than 1000000.
@@ -58,7 +60,8 @@ class Database
         setDatabaseOption(DatabaseOption.MAX_WATCHES, value);
     }
 
-    /* Specify the machine ID that was passed to fdbserver processes running on
+    /**
+     * Specify the machine ID that was passed to fdbserver processes running on
      * the same machine as this client, for better location-aware load
      * balancing.
      * Parameter: (String) Hexadecimal ID
@@ -68,7 +71,8 @@ class Database
         setDatabaseOption(DatabaseOption.MACHINE_ID, value);
     }
 
-    /* Specify the datacenter ID that was passed to fdbserver processes running
+    /**
+     * Specify the datacenter ID that was passed to fdbserver processes running
      * in the same datacenter as this client, for better location-aware load
      * balancing.
      * Parameter: (String) Hexadecimal ID

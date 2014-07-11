@@ -19,7 +19,7 @@ struct Selector
 
 class Transaction
 {
-    private TransactionHandle tr;
+    private const TransactionHandle tr;
 
     private static auto startFuture(F, C)(FDBFuture * f, C callback)
     {
@@ -60,6 +60,27 @@ class Transaction
         {
             auto f = fdb_transaction_commit(tr);
             return startFuture!VoidFuture(f, callback);
+        }
+    }
+
+    void cancel()
+    {
+        // cancel, commit and reset are mutually exclusive
+        synchronized (this)
+        {
+            fdb_transaction_cancel(tr);
+        }
+    }
+
+    /**
+     * Resets transaction to its initial state
+     */
+    void reset()
+    {
+        // cancel, commit and reset are mutually exclusive
+        synchronized (this)
+        {
+            fdb_transaction_reset(tr);
         }
     }
 
@@ -185,17 +206,6 @@ class Transaction
         return startFuture!VoidFuture(f, callback);
     }
 
-    /* Resets transaction to its initial state
-     */
-    void reset()
-    {
-        // cancel, commit and reset are mutually exclusive
-        synchronized (this)
-        {
-            fdb_transaction_reset(tr);
-        }
-    }
-
     void setReadVersion(int ver)
     {
         fdb_transaction_set_read_version(tr, ver);
@@ -212,15 +222,6 @@ class Transaction
         long ver;
         enforceError(fdb_transaction_get_committed_version(tr, &ver));
         return ver;
-    }
-
-    void cancel()
-    {
-        // cancel, commit and reset are mutually exclusive
-        synchronized (this)
-        {
-            fdb_transaction_cancel(tr);
-        }
     }
 
     auto getAddressesForKey(Key key, StringFutureCallback callback)
