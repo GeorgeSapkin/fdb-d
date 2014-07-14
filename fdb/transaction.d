@@ -55,7 +55,7 @@ class Transaction
         synchronized (this)
         {
             auto f = fdb_transaction_commit(tr);
-            auto _future = startOrCreateFuture!VoidFuture(f, callback);
+            auto _future = startOrCreateFuture!VoidFuture(f, this, callback);
             return _future;
         }
     }
@@ -110,7 +110,7 @@ class Transaction
             selector.offset,
             cast(fdb_bool_t)snapshot);
 
-        auto _future = startOrCreateFuture!KeyFuture(f, callback);
+        auto _future = startOrCreateFuture!KeyFuture(f, this, callback);
         return _future;
     }
 
@@ -126,7 +126,7 @@ class Transaction
             cast(int)key.length,
             snapshot);
 
-        auto _future = startOrCreateFuture!ValueFuture(f, callback);
+        auto _future = startOrCreateFuture!ValueFuture(f, this, callback);
         return _future;
     }
 
@@ -161,7 +161,7 @@ class Transaction
             snapshot,
             reverse);
 
-        auto _future = startOrCreateFuture!KeyValueFuture(f, callback);
+        auto _future = startOrCreateFuture!KeyValueFuture(f, this, callback);
         return _future;
     }
 
@@ -171,7 +171,7 @@ class Transaction
             tr,
             &key[0],
             cast(int)key.length);
-        auto _future = startOrCreateFuture!WatchFuture(f, callback);
+        auto _future = startOrCreateFuture!WatchFuture(f, this, callback);
         return _future;
     }
 
@@ -204,7 +204,7 @@ class Transaction
     auto onError(fdb_error_t err, VoidFutureCallback callback = null)
     {
         auto f = fdb_transaction_on_error(tr, err);
-        auto _future = startOrCreateFuture!VoidFuture(f, callback);
+        auto _future = startOrCreateFuture!VoidFuture(f, this, callback);
         return _future;
     }
 
@@ -216,7 +216,7 @@ class Transaction
     auto getReadVersion(VersionFutureCallback callback = null)
     {
         auto f = fdb_transaction_get_read_version(tr);
-        auto _future = startOrCreateFuture!VersionFuture(f, callback);
+        auto _future = startOrCreateFuture!VersionFuture(f, this, callback);
         return _future;
     }
 
@@ -234,7 +234,7 @@ class Transaction
             &key[0],
             cast(int)key.length);
 
-        auto _future = startOrCreateFuture!StringFuture(f, callback);
+        auto _future = startOrCreateFuture!StringFuture(f, this, callback);
         return _future;
     }
 

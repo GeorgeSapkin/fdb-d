@@ -11,7 +11,8 @@ import
 
 import
     fdb.error,
-    fdb.fdb_c;
+    fdb.fdb_c,
+    fdb.transaction;
 
 private alias PKey      = ubyte *;
 private alias PValue    = ubyte *;
@@ -48,12 +49,14 @@ shared class Future(C, V)
     private alias SH = shared FutureHandle;
     private alias SE = shared fdb_error_t;
 
-    private FutureHandle    future;
-    private C               callbackFunc;
+    private FutureHandle        future;
+    private const Transaction   tr;
+    private C                   callbackFunc;
 
-    this(FutureHandle future)
+    this(FutureHandle future, const Transaction tr)
     {
         this.future = cast(shared)future;
+        this.tr     = cast(shared)tr;
     }
 
     ~this()
@@ -138,9 +141,9 @@ shared class Future(C, V)
 
 private mixin template FutureCtor(C)
 {
-    this(FutureHandle future)
+    this(FutureHandle future, const Transaction tr = null)
     {
-        super(future);
+        super(future, tr);
     }
 }
 
@@ -300,9 +303,9 @@ auto createFuture(F)(FutureHandle f)
     return _future;
 }
 
-auto startOrCreateFuture(F, C)(FutureHandle f, C callback)
+auto startOrCreateFuture(F, C)(FutureHandle f, const Transaction tr, C callback)
 {
-    auto _future = new shared F(f);
+    auto _future = new shared F(f, tr);
     if (callback)
         _future.start(callback);
     return _future;
