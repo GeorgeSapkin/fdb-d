@@ -51,10 +51,9 @@ shared class Future(C, V)
     private FutureHandle    future;
     private C               callbackFunc;
 
-    this(FutureHandle future, C callbackFunc = null)
+    this(FutureHandle future)
     {
-        this.future       = cast(shared)future;
-        this.callbackFunc = cast(shared)callbackFunc;
+        this.future = cast(shared)future;
     }
 
     ~this()
@@ -72,8 +71,9 @@ shared class Future(C, V)
         }
     }
 
-    void start() const
+    void start(C callbackFunc)
     {
+        this.callbackFunc = cast(shared)callbackFunc;
         const auto err = fdb_future_set_callback(
             cast(FutureHandle) future,
             cast(FDBCallback)  &futureReady,
@@ -81,8 +81,11 @@ shared class Future(C, V)
         enforceError(err);
     }
 
-    void wait() const
+    void wait(C callbackFunc = null)
     {
+        if (callbackFunc)
+            start(callbackFunc);
+
         enforceError(fdb_future_block_until_ready(cast(FutureHandle)future));
     }
 
@@ -131,9 +134,9 @@ shared class Future(C, V)
 
 private mixin template FutureCtor(C)
 {
-    this(FutureHandle future, C callbackFunc = null)
+    this(FutureHandle future)
     {
-        super(future, callbackFunc);
+        super(future);
     }
 }
 

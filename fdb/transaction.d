@@ -23,9 +23,9 @@ class Transaction
 
     private static auto startOrCreateFuture(F, C)(FutureHandle f, C callback)
     {
-        auto _future = new shared F(f, callback);
+        auto _future = new shared F(f);
         if (callback)
-            _future.start();
+            _future.start(callback);
         return _future;
     }
 
