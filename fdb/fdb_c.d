@@ -49,8 +49,8 @@ char *          fdb_get_error(
     fdb_error_t code);
 
 fdb_error_t     fdb_network_set_option(
-    NetworkOption       option,
-    immutable(char) *   value,
+    const NetworkOption option,
+    immutable char *    value,
     int                 value_length);
 
 fdb_error_t     fdb_setup_network();
@@ -120,30 +120,30 @@ FDBFuture *     fdb_create_cluster(
     immutable(char) *   cluster_file_path);
 
 void            fdb_cluster_destroy(
-    FDBCluster *        c);
+    const FDBCluster *  c);
 
 fdb_error_t     fdb_cluster_set_option(
-    FDBCluster      *   c,
+    const FDBCluster *  c,
     ClusterOption       option,
-    immutable(char) *   value,
+    immutable char *    value,
     int                 value_length);
 
 FDBFuture *     fdb_cluster_create_database(
-    FDBCluster *        c,
-    immutable(char) *   db_name,
+    const FDBCluster *  c,
+    immutable char *    db_name,
     int                 db_name_length);
 
 void            fdb_database_destroy(
-    FDBDatabase *       d);
+    const FDBDatabase * d);
 
 fdb_error_t     fdb_database_set_option(
-    FDBDatabase *       d,
-    DatabaseOption      option,
-    immutable(char) *   value,
-    int                 value_length);
+    const FDBDatabase *     d,
+    const DatabaseOption    option,
+    immutable char *        value,
+    int                     value_length);
 
 fdb_error_t     fdb_database_create_transaction(
-    FDBDatabase *       d,
+    const FDBDatabase * d,
     FDBTransaction **   out_transaction);
 
 void            fdb_transaction_destroy(

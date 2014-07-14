@@ -25,7 +25,7 @@ shared static this()
     selectAPIVersion(FBD_RUNTIME_API_VERSION);
 }
 
-void selectAPIVersion(int apiVersion)
+void selectAPIVersion(const int apiVersion)
 {
     enforceError(fdb_select_api_version(apiVersion));
 }
@@ -58,7 +58,7 @@ void stopNetwork()
     networkStarted = false;
 }
 
-auto createCluster(string clusterFilePath)
+auto createCluster(const string clusterFilePath = null)
 {
     const FDBFuture * f = fdb_create_cluster(clusterFilePath.toStringz);
     enforceError(fdb_future_block_until_ready(f));

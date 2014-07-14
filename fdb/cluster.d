@@ -12,9 +12,9 @@ import
 
 class Cluster
 {
-    private ClusterHandle cluster;
+    private const ClusterHandle cluster;
 
-    this(ClusterHandle cluster)
+    this(const ClusterHandle cluster)
     {
         this.cluster = cluster;
     }
@@ -29,7 +29,7 @@ class Cluster
         fdb_cluster_destroy(cluster);
     }
 
-    auto openDatabase(string dbName = "DB")
+    auto openDatabase(const string dbName = "DB")
     {
         auto f = fdb_cluster_create_database(
             cluster,

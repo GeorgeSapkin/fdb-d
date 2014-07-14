@@ -13,9 +13,9 @@ import
 
 class Database
 {
-    private DatabaseHandle db;
+    private const DatabaseHandle db;
 
-    this(DatabaseHandle db)
+    this(const DatabaseHandle db)
     {
         this.db = db;
     }
@@ -25,12 +25,12 @@ class Database
         destroy;
     }
 
-    void destroy()
+    void destroy() const
     {
         fdb_database_destroy(db);
     }
 
-    auto createTransaction()
+    auto createTransaction() const
     {
         TransactionHandle tr;
         enforceError(fdb_database_create_transaction(db, &tr));
@@ -43,7 +43,7 @@ class Database
      * random pattern. Defaults to 100000.
      * Parameter: (Int) Max location cache entries
      */
-    void setLocationCacheSize(long value)
+    void setLocationCacheSize(const long value) const
     {
         setDatabaseOption(DatabaseOption.LOCATION_CACHE_SIZE, value);
     }
@@ -55,7 +55,7 @@ class Database
      * Defaults to 10000 and cannot be larger than 1000000.
      * Parameter: (Int) Max outstanding watches
      */
-    void setMaxWatches(long value)
+    void setMaxWatches(const long value) const
     {
         setDatabaseOption(DatabaseOption.MAX_WATCHES, value);
     }
@@ -66,7 +66,7 @@ class Database
      * balancing.
      * Parameter: (String) Hexadecimal ID
      */
-    void setMachineId(string value)
+    void setMachineId(const string value) const
     {
         setDatabaseOption(DatabaseOption.MACHINE_ID, value);
     }
@@ -77,14 +77,16 @@ class Database
      * balancing.
      * Parameter: (String) Hexadecimal ID
      */
-    void setDatacenterId(string value)
+    void setDatacenterId(const string value) const
     {
         setDatabaseOption(DatabaseOption.DATACENTER_ID, value);
     }
 
-    private void setDatabaseOption(DatabaseOption op, long value)
+    private void setDatabaseOption(
+        const DatabaseOption    op,
+        const long              value) const
     {
-        auto err = fdb_database_set_option(
+        const auto err = fdb_database_set_option(
             db,
             op,
             cast(immutable(char)*)&value,
@@ -92,9 +94,11 @@ class Database
         enforceError(err);
     }
 
-    private void setDatabaseOption(DatabaseOption op, string value)
+    private void setDatabaseOption(
+        const DatabaseOption    op,
+        const string            value) const
     {
-        auto err = fdb_database_set_option(
+        const auto err = fdb_database_set_option(
             db,
             op,
             value.toStringz,

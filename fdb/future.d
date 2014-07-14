@@ -30,10 +30,10 @@ class Record
 
 class KeyValueResult
 {
-    Record[] records;
-    bool     more;
+    const Record[] records;
+    const bool     more;
 
-    this(Record[] records, bool more) pure
+    this(const Record[] records, const bool more) pure
     {
         this.records = records;
         this.more    = more;
@@ -44,12 +44,12 @@ alias FutureCallback(V) = void delegate(fdb_error_t err, V value);
 
 shared class Future(C, V)
 {
-    private alias SF = shared(Future!(C, V));
-    private alias SH = shared(FutureHandle);
-    private alias SE = shared(fdb_error_t);
+    private alias SF = shared Future!(C, V);
+    private alias SH = shared FutureHandle;
+    private alias SE = shared fdb_error_t;
 
-    private FutureHandle future;
-    private C            callbackFunc;
+    private FutureHandle    future;
+    private C               callbackFunc;
 
     this(FutureHandle future, C callbackFunc)
     {
@@ -74,7 +74,7 @@ shared class Future(C, V)
 
     void start()
     {
-        auto err = fdb_future_set_callback(
+        const auto err = fdb_future_set_callback(
             cast(FutureHandle) future,
             cast(FDBCallback)  &futureReady,
             cast(void*)        this);
