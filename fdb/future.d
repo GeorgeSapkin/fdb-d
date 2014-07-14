@@ -289,3 +289,17 @@ shared class WatchFuture : VoidFuture
             fdb_future_cancel(cast(FutureHandle)future);
     }
 }
+
+auto createFuture(F)(FutureHandle f)
+{
+    auto _future = new shared F(f);
+    return _future;
+}
+
+auto startOrCreateFuture(F, C)(FutureHandle f, C callback)
+{
+    auto _future = new shared F(f);
+    if (callback)
+        _future.start(callback);
+    return _future;
+}

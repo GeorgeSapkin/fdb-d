@@ -21,14 +21,6 @@ class Transaction
 {
     private const TransactionHandle tr;
 
-    private static auto startOrCreateFuture(F, C)(FutureHandle f, C callback)
-    {
-        auto _future = new shared F(f);
-        if (callback)
-            _future.start(callback);
-        return _future;
-    }
-
     this(const TransactionHandle tr)
     {
         this.tr = tr;

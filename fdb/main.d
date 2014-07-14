@@ -13,6 +13,7 @@ import
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,
+    fdb.future,
     fdb.networkoptions;
 
 private shared auto networkStarted = false;
@@ -25,7 +26,7 @@ shared static this()
     selectAPIVersion(FBD_RUNTIME_API_VERSION);
 }
 
-void selectAPIVersion(const int apiVersion)
+private void selectAPIVersion(const int apiVersion)
 {
     enforceError(fdb_select_api_version(apiVersion));
 }
@@ -60,10 +61,11 @@ void stopNetwork()
 
 auto createCluster(const string clusterFilePath = null)
 {
-    const FDBFuture * f = fdb_create_cluster(clusterFilePath.toStringz);
-    enforceError(fdb_future_block_until_ready(f));
+    auto f = fdb_create_cluster(clusterFilePath.toStringz);
+    scope auto _future = createFuture!VoidFuture(f); 
+    _future.wait();
 
-    FDBCluster * cluster;
+    ClusterHandle cluster;
     enforceError(fdb_future_get_cluster(f, &cluster));
 
     return new Cluster(cluster);
