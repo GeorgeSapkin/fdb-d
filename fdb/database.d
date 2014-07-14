@@ -6,6 +6,7 @@ import
     std.string;
 
 import
+    fdb.cluster,
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,
@@ -13,11 +14,13 @@ import
 
 class Database
 {
+    private const Cluster        cluster;
     private const DatabaseHandle db;
 
-    this(const DatabaseHandle db)
+    this(const Cluster cluster, const DatabaseHandle db)
     {
-        this.db = db;
+        this.cluster = cluster;
+        this.db      = db;
     }
 
     ~this()
@@ -34,7 +37,7 @@ class Database
     {
         TransactionHandle tr;
         enforceError(fdb_database_create_transaction(db, &tr));
-        return new Transaction(tr);
+        return new Transaction(this, tr);
     }
 
     /**

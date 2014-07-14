@@ -5,6 +5,7 @@ import
     std.exception;
 
 import
+    fdb.database,
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,
@@ -19,10 +20,12 @@ struct Selector
 
 class Transaction
 {
+    private const Database          db;
     private const TransactionHandle tr;
 
-    this(const TransactionHandle tr)
+    this(const Database db, const TransactionHandle tr)
     {
+        this.db = db;
         this.tr = tr;
     }
 

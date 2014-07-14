@@ -8,7 +8,8 @@ import
 import
     fdb.database,
     fdb.error,
-    fdb.fdb_c;
+    fdb.fdb_c,
+    fdb.future;
 
 class Cluster
 {
@@ -35,11 +36,11 @@ class Cluster
             cluster,
             dbName.toStringz(),
             cast(int)dbName.length);
-
-        enforceError(fdb_future_block_until_ready(f));
+        scope auto _future = createFuture!VoidFuture(f); 
+        _future.wait();
 
         DatabaseHandle database;
         enforceError(fdb_future_get_database(f, &database));
-        return new Database(database);
+        return new Database(this, database);
     }
 }
