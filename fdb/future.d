@@ -71,7 +71,7 @@ shared class Future(C, V)
         }
     }
 
-    void start(C callbackFunc)
+    auto start(C callbackFunc)
     {
         this.callbackFunc = cast(shared)callbackFunc;
         const auto err = fdb_future_set_callback(
@@ -79,14 +79,18 @@ shared class Future(C, V)
             cast(FDBCallback)  &futureReady,
             cast(void*)        this);
         enforceError(err);
+
+        return this;
     }
 
-    void wait(C callbackFunc = null)
+    auto wait(C callbackFunc = null)
     {
         if (callbackFunc)
             start(callbackFunc);
 
         enforceError(fdb_future_block_until_ready(cast(FutureHandle)future));
+
+        return this;
     }
 
     extern(C) static void futureReady(SH f, SF thiz)
