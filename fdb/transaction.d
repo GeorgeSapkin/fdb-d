@@ -21,10 +21,11 @@ class Transaction
 {
     private const TransactionHandle tr;
 
-    private static auto startFuture(F, C)(FDBFuture * f, C callback)
+    private static auto startOrCreateFuture(F, C)(FutureHandle f, C callback)
     {
         auto _future = new shared F(f, callback);
-        _future.start();
+        if (callback)
+            _future.start();
         return _future;
     }
 
@@ -53,13 +54,13 @@ class Transaction
             cast(int)value.length);
     }
 
-    auto commit(VoidFutureCallback callback)
+    auto commit(VoidFutureCallback callback = null)
     {
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
         {
             auto f = fdb_transaction_commit(tr);
-            auto _future = startFuture!VoidFuture(f, callback);
+            auto _future = startOrCreateFuture!VoidFuture(f, callback);
             return _future;
         }
     }
@@ -103,7 +104,7 @@ class Transaction
     auto getKey(
         Selector          selector,
         bool              snapshot,
-        KeyFutureCallback callback)
+        KeyFutureCallback callback = null)
     {
 
         auto f = fdb_transaction_get_key(
@@ -114,14 +115,14 @@ class Transaction
             selector.offset,
             cast(fdb_bool_t)snapshot);
 
-        auto _future = startFuture!KeyFuture(f, callback);
+        auto _future = startOrCreateFuture!KeyFuture(f, callback);
         return _future;
     }
 
     auto get(
         Key                 key,
         bool                snapshot,
-        ValueFutureCallback callback)
+        ValueFutureCallback callback = null)
     {
 
         auto f = fdb_transaction_get(
@@ -130,7 +131,7 @@ class Transaction
             cast(int)key.length,
             snapshot);
 
-        auto _future = startFuture!ValueFuture(f, callback);
+        auto _future = startOrCreateFuture!ValueFuture(f, callback);
         return _future;
     }
 
@@ -142,7 +143,7 @@ class Transaction
         int                    iteration,
         bool                   snapshot,
         bool                   reverse,
-        KeyValueFutureCallback callback)
+        KeyValueFutureCallback callback = null)
     {
 
         auto f = fdb_transaction_get_range(
@@ -165,17 +166,17 @@ class Transaction
             snapshot,
             reverse);
 
-        auto _future = startFuture!KeyValueFuture(f, callback);
+        auto _future = startOrCreateFuture!KeyValueFuture(f, callback);
         return _future;
     }
 
-    auto watch(Key key, VoidFutureCallback callback)
+    auto watch(Key key, VoidFutureCallback callback = null)
     {
         auto f = fdb_transaction_watch(
             tr,
             &key[0],
             cast(int)key.length);
-        auto _future = startFuture!WatchFuture(f, callback);
+        auto _future = startOrCreateFuture!WatchFuture(f, callback);
         return _future;
     }
 
@@ -205,10 +206,10 @@ class Transaction
         addConflictRange(start, end, ConflictRangeType.WRITE);
     }
 
-    auto onError(fdb_error_t err, VoidFutureCallback callback)
+    auto onError(fdb_error_t err, VoidFutureCallback callback = null)
     {
         auto f = fdb_transaction_on_error(tr, err);
-        auto _future = startFuture!VoidFuture(f, callback);
+        auto _future = startOrCreateFuture!VoidFuture(f, callback);
         return _future;
     }
 
@@ -217,10 +218,10 @@ class Transaction
         fdb_transaction_set_read_version(tr, ver);
     }
 
-    auto getReadVersion(VersionFutureCallback callback)
+    auto getReadVersion(VersionFutureCallback callback = null)
     {
         auto f = fdb_transaction_get_read_version(tr);
-        auto _future = startFuture!VersionFuture(f, callback);
+        auto _future = startOrCreateFuture!VersionFuture(f, callback);
         return _future;
     }
 
@@ -231,14 +232,14 @@ class Transaction
         return ver;
     }
 
-    auto getAddressesForKey(Key key, StringFutureCallback callback)
+    auto getAddressesForKey(Key key, StringFutureCallback callback = null)
     {
         auto f = fdb_transaction_get_addresses_for_key(
             tr,
             &key[0],
             cast(int)key.length);
 
-        auto _future = startFuture!StringFuture(f, callback);
+        auto _future = startOrCreateFuture!StringFuture(f, callback);
         return _future;
     }
 

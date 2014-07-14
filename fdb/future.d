@@ -51,7 +51,7 @@ shared class Future(C, V)
     private FutureHandle    future;
     private C               callbackFunc;
 
-    this(FutureHandle future, C callbackFunc)
+    this(FutureHandle future, C callbackFunc = null)
     {
         this.future       = cast(shared)future;
         this.callbackFunc = cast(shared)callbackFunc;
@@ -72,7 +72,7 @@ shared class Future(C, V)
         }
     }
 
-    void start()
+    void start() const
     {
         const auto err = fdb_future_set_callback(
             cast(FutureHandle) future,
@@ -81,7 +81,7 @@ shared class Future(C, V)
         enforceError(err);
     }
 
-    void blockUntilReady()
+    void wait() const
     {
         enforceError(fdb_future_block_until_ready(cast(FutureHandle)future));
     }
@@ -101,16 +101,28 @@ shared class Future(C, V)
         shared fdb_error_t err;
         with (thiz)
         {
-            static if (is(ReturnType!extractValue == void))
+            static if (is(V == void))
             {
                 extractValue(cast(shared)f, err);
-                (cast(C)callbackFunc)(err);
+                if (callbackFunc)
+                    (cast(C)callbackFunc)(err);
             }
             else
             {
                 auto value = extractValue(cast(shared)f, err);
-                (cast(C)callbackFunc)(err, value);
+                if (callbackFunc)
+                    (cast(C)callbackFunc)(err, value);
             }
+        }
+    }
+
+    V getValue()
+    {
+        static if (!is(V == void))
+        {
+            shared fdb_error_t err;
+            auto value = extractValue(future, err);
+            return value;
         }
     }
 
@@ -119,7 +131,7 @@ shared class Future(C, V)
 
 private mixin template FutureCtor(C)
 {
-    this(FutureHandle future, C callbackFunc)
+    this(FutureHandle future, C callbackFunc = null)
     {
         super(future, callbackFunc);
     }
