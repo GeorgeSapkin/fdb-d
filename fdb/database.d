@@ -10,6 +10,7 @@ import
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,
+    fdb.future,
     fdb.transaction;
 
 class Database
@@ -109,3 +110,63 @@ class Database
         enforceError(err);
     }
 }
+
+alias WorkFunc = void delegate(Transaction tr, VoidFutureCallback cb);
+
+auto doTransaction(
+    Database db,
+    WorkFunc func,
+    VoidFutureCallback commitCallback)
+{
+    auto tr = db.createTransaction();
+    auto future = createFuture!doTransactionWorker(tr, func, commitCallback);
+    return future;
+};
+
+void doTransactionWorker(
+    Transaction         tr,
+    WorkFunc            func,
+    VoidFutureCallback  commitCallback,
+    CompletionCallback  futureCompletionCallback)
+{
+    retryLoop(tr, func, (error)
+    {
+        commitCallback(error);
+        futureCompletionCallback();
+    });
+}
+
+private void retryLoop(
+    Transaction tr,
+    WorkFunc func,
+    VoidFutureCallback cb)
+{
+    func(tr, (err)
+    {
+        if (err)
+            onError(tr, err, func, cb);
+        else
+            tr.commit((commitErr)
+            {
+                if (commitErr)
+                    onError(tr, commitErr, func, cb);
+                else
+                    cb(commitErr);
+            });
+    });
+}
+
+private void onError(
+    Transaction tr,
+    fdb_error_t err,
+    WorkFunc func,
+    VoidFutureCallback cb)
+{
+    tr.onError(err, (retryErr)
+    {
+        if (retryErr)
+            cb(retryErr);
+        else
+            retryLoop(tr, func, cb);
+    });
+};
