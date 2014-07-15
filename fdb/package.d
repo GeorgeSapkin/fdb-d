@@ -7,6 +7,7 @@ public
         fdb.error,
         fdb.fdb_c,
         fdb.fdb_c_options,
+        fdb.future,
         fdb.main,
         fdb.networkoptions,
         fdb.transaction;

@@ -129,7 +129,7 @@ shared class Future(C, V)
     /**
      * Blocks until value is loaded and returns it
      */
-    @property V value()
+    V getValue()
     {
         static if (!is(V == void))
         {
@@ -313,4 +313,10 @@ auto startOrCreateFuture(F, C)(FutureHandle f, const Transaction tr, C callback)
     if (callback)
         _future.start(callback);
     return _future;
+}
+
+void wait(F ...)(F futures)
+{
+    foreach (f; futures)
+        f.wait;
 }

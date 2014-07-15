@@ -7,7 +7,7 @@ import
 auto unpack(const ubyte[] bytes)
 {
     ulong pos = 0;
-    FDBVariant[] variants;
+    FDBTuple variants;
     while (pos < bytes.length)
     {
         auto marker = cast(TupleType)bytes[pos++];

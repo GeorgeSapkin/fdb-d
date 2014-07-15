@@ -39,7 +39,7 @@ class Transaction
         fdb_transaction_destroy(tr);
     }
 
-    void set(Key key, Value value)
+    void set(const Key key, const Value value) const
     {
         fdb_transaction_set(
             tr,

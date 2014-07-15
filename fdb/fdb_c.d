@@ -202,11 +202,11 @@ FDBFuture *     fdb_transaction_get_range(
     fdb_bool_t          reverse);
 
 void            fdb_transaction_set(
-    const(FDBTransaction *) tr,
-    ubyte *             key_name,
-    int                 key_name_length,
-    ubyte *             value,
-    int                 value_length);
+    const FDBTransaction * tr,
+    const ubyte *       key_name,
+    const int           key_name_length,
+    const ubyte *       value,
+    const int           value_length);
 
 void            fdb_transaction_atomic_op(
     const(FDBTransaction *) tr,
