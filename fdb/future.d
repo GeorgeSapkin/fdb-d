@@ -1,6 +1,7 @@
 module fdb.future;
 
 import
+    core.sync.semaphore,
     core.thread,
     std.algorithm,
     std.array,
@@ -8,6 +9,8 @@ import
     std.exception,
     std.parallelism,
     std.traits;
+
+import std.stdio;
 
 import
     fdb.error,
@@ -41,11 +44,45 @@ class KeyValueResult
     }
 }
 
+alias CompletionCallback = void delegate();
+
+class Future(alias fun, Args...)
+{
+    alias V = ReturnType!fun;
+    private Task!(fun, ParameterTypeTuple!fun) * t;
+
+    private Semaphore futureSemaphore;
+
+    this(Args args)
+    {
+        futureSemaphore = new Semaphore;
+
+        t = task!fun(args, &notify);
+        taskPool.put(t);
+    }
+
+    void notify()
+    {
+        futureSemaphore.notify;
+    }
+
+    auto wait()
+    {
+        futureSemaphore.wait;
+        return this;
+    }
+
+    V getValue()
+    {
+        return t.yieldForce;
+    }
+}
+
 alias FutureCallback(V) = void delegate(fdb_error_t err, V value);
 
-shared class Future(C, V)
+shared class FDBFutureBase(C, V)
 {
-    private alias SF = shared Future!(C, V);
+    private alias SF = shared FDBFutureBase!(C, V);
     private alias SH = shared FutureHandle;
     private alias SE = shared fdb_error_t;
 
@@ -153,7 +190,7 @@ private mixin template FutureCtor(C)
 
 alias ValueFutureCallback = FutureCallback!Value;
 
-shared class ValueFuture : Future!(ValueFutureCallback, Value)
+shared class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
 {
     mixin FutureCtor!ValueFutureCallback;
 
@@ -176,7 +213,7 @@ shared class ValueFuture : Future!(ValueFutureCallback, Value)
 
 alias KeyFutureCallback = FutureCallback!Key;
 
-shared class KeyFuture : Future!(KeyFutureCallback, Key)
+shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
 {
     mixin FutureCtor!KeyFutureCallback;
 
@@ -197,7 +234,7 @@ shared class KeyFuture : Future!(KeyFutureCallback, Key)
 
 alias VoidFutureCallback = void delegate(fdb_error_t err);
 
-shared class VoidFuture : Future!(VoidFutureCallback, void)
+shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 {
     mixin FutureCtor!VoidFutureCallback;
 
@@ -211,9 +248,8 @@ shared class VoidFuture : Future!(VoidFutureCallback, void)
 alias KeyValueFutureCallback = FutureCallback!KeyValueResult;
 
 shared class KeyValueFuture
-    : Future!(KeyValueFutureCallback, KeyValueResult)
+    : FDBFutureBase!(KeyValueFutureCallback, KeyValueResult)
 {
-
     mixin FutureCtor!KeyValueFutureCallback;
 
     override KeyValueResult extractValue(SH future, out SE err)
@@ -248,7 +284,7 @@ shared class KeyValueFuture
 
 alias VersionFutureCallback = FutureCallback!ulong;
 
-shared class VersionFuture : Future!(VersionFutureCallback, ulong)
+shared class VersionFuture : FDBFutureBase!(VersionFutureCallback, ulong)
 {
     mixin FutureCtor!VersionFutureCallback;
 
@@ -266,7 +302,7 @@ shared class VersionFuture : Future!(VersionFutureCallback, ulong)
 
 alias StringFutureCallback = FutureCallback!(string[]);
 
-shared class StringFuture : Future!(StringFutureCallback, string[])
+shared class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
 {
     mixin FutureCtor!StringFutureCallback;
 
@@ -304,6 +340,13 @@ shared class WatchFuture : VoidFuture
 auto createFuture(F)(FutureHandle f)
 {
     auto _future = new shared F(f);
+    return _future;
+}
+
+auto createFuture(alias fun, Args ...)(Args args)
+if(isSomeFunction!fun)
+{
+    auto _future = new Future!(fun, Args)(args);
     return _future;
 }
 
