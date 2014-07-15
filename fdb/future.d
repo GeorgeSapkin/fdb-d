@@ -126,10 +126,14 @@ shared class Future(C, V)
         }
     }
 
-    V getValue()
+    /**
+     * Blocks until value is loaded and returns it
+     */
+    @property V value()
     {
         static if (!is(V == void))
         {
+            wait;
             shared fdb_error_t err;
             auto value = extractValue(future, err);
             return value;
