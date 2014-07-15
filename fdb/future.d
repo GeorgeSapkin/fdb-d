@@ -195,7 +195,7 @@ shared class KeyFuture : Future!(KeyFutureCallback, Key)
     }
 }
 
-alias VoidFutureCallback = void function(fdb_error_t err);
+alias VoidFutureCallback = void delegate(fdb_error_t err);
 
 shared class VoidFuture : Future!(VoidFutureCallback, void)
 {
