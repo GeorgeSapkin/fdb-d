@@ -193,8 +193,8 @@ class Transaction
         const int              iteration    = 1,
         KeyValueFutureCallback callback     = null) const
     {
-        auto start = prefix ~ 0;
-        auto end   = prefix ~ 0xff;
+        auto start = prefix;
+        auto end   = prefix.getEndPrefix;
         return getRange(
             start, end, limit, mode, snapshot, reverse, iteration, callback);
     }
@@ -521,4 +521,18 @@ class Transaction
             cast(int)value.sizeof);
         enforceError(err);
     }
+}
+
+private auto getEndPrefix(const Key prefix) pure
+{
+    ulong i = prefix.length;
+
+    do --i;
+    while (i != 0 && prefix[i] == 0xff);
+
+    enforce(prefix[i] != 0xff, "All prefix bytes cannot equal 0xff");
+
+    auto endPrefix = prefix[0 .. i + 1].dup;
+    ++endPrefix[i];
+    return endPrefix;
 }
