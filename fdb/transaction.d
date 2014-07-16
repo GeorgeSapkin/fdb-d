@@ -156,12 +156,12 @@ class Transaction
     auto getRange(
         Selector               start,
         Selector               end,
-        int                    limit,
-        StreamingMode          mode,
-        bool                   snapshot,
-        bool                   reverse,
-        int                    iteration = 1,
-        KeyValueFutureCallback callback = null)
+        int                    limit        = 0,
+        StreamingMode          mode         = StreamingMode.ITERATOR,
+        bool                   snapshot     = false,
+        bool                   reverse      = false,
+        int                    iteration    = 1,
+        KeyValueFutureCallback callback     = null)
     {
         auto info = RangeInfo(
             start, end, limit, mode, iteration, snapshot, reverse);
@@ -171,12 +171,12 @@ class Transaction
     auto getRange(
         Key                    start,
         Key                    end,
-        int                    limit,
-        StreamingMode          mode,
-        bool                   snapshot,
-        bool                   reverse,
-        int                    iteration = 1,
-        KeyValueFutureCallback callback = null)
+        int                    limit        = 0,
+        StreamingMode          mode         = StreamingMode.ITERATOR,
+        bool                   snapshot     = false,
+        bool                   reverse      = false,
+        int                    iteration    = 1,
+        KeyValueFutureCallback callback     = null)
     {
         auto startSel = start.firstGreaterOrEqual;
         auto endSel   = end.firstGreaterOrEqual;
@@ -184,14 +184,14 @@ class Transaction
             startSel, endSel, limit, mode, snapshot, reverse, iteration, callback);
     }
 
-    auto getPrefixedRange(
+    auto getRangeStartsWith(
         Key                    prefix,
-        int                    limit,
-        StreamingMode          mode,
-        bool                   snapshot,
-        bool                   reverse,
-        int                    iteration = 1,
-        KeyValueFutureCallback callback = null)
+        int                    limit        = 0,
+        StreamingMode          mode         = StreamingMode.ITERATOR,
+        bool                   snapshot     = false,
+        bool                   reverse      = false,
+        int                    iteration    = 1,
+        KeyValueFutureCallback callback     = null)
     {
         auto start = prefix ~ 0;
         auto end   = prefix ~ 0xff;
