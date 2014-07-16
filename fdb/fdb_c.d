@@ -166,10 +166,10 @@ FDBFuture *     fdb_transaction_get_read_version(
     const(FDBTransaction *) tr);
 
 FDBFuture *     fdb_transaction_get(
-    const(FDBTransaction *) tr,
-    ubyte *             key_name,
-    int                 key_name_length,
-    fdb_bool_t          snapshot);
+    const FDBTransaction * tr,
+    const ubyte *       key_name,
+    const int           key_name_length,
+    const fdb_bool_t    snapshot);
 
 FDBFuture *     fdb_transaction_get_key(
     const FDBTransaction * tr,
@@ -229,9 +229,9 @@ void            fdb_transaction_clear_range(
     int                 end_key_name_length);
 
 FDBFuture *     fdb_transaction_watch(
-    const(FDBTransaction *) tr,
-    ubyte *             key_name,
-    int                 key_name_length);
+    const FDBTransaction * tr,
+    const ubyte *       key_name,
+    const int           key_name_length);
 
 FDBFuture *     fdb_transaction_commit(
     const(FDBTransaction *) tr);
