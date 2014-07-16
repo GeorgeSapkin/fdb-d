@@ -172,12 +172,12 @@ FDBFuture *     fdb_transaction_get(
     fdb_bool_t          snapshot);
 
 FDBFuture *     fdb_transaction_get_key(
-    const(FDBTransaction *) tr,
-    ubyte *             key_name,
-    int                 key_name_length,
-    fdb_bool_t          or_equal,
-    int                 offset,
-    fdb_bool_t          snapshot);
+    const FDBTransaction * tr,
+    const ubyte *       key_name,
+    const int           key_name_length,
+    const fdb_bool_t    or_equal,
+    const int           offset,
+    const fdb_bool_t    snapshot);
 
 FDBFuture *     fdb_transaction_get_addresses_for_key(
     const(FDBTransaction *) tr,

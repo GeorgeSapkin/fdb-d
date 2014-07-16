@@ -168,8 +168,9 @@ class Transaction
         return getRange(info, callback);
     }
 
-    auto getPrefixedRange(
-        Selector               prefix,
+    auto getRange(
+        Key                    start,
+        Key                    end,
         int                    limit,
         StreamingMode          mode,
         bool                   snapshot,
@@ -177,8 +178,23 @@ class Transaction
         int                    iteration = 1,
         KeyValueFutureCallback callback = null)
     {
-        auto start = Selector(prefix.key ~ 0,    prefix.orEqual, prefix.offset);
-        auto end   = Selector(prefix.key ~ 0xff, prefix.orEqual, prefix.offset);
+        auto startSel = start.firstGreaterOrEqual;
+        auto endSel   = end.firstGreaterOrEqual;
+        return getRange(
+            startSel, endSel, limit, mode, snapshot, reverse, iteration, callback);
+    }
+
+    auto getPrefixedRange(
+        Key                    prefix,
+        int                    limit,
+        StreamingMode          mode,
+        bool                   snapshot,
+        bool                   reverse,
+        int                    iteration = 1,
+        KeyValueFutureCallback callback = null)
+    {
+        auto start = prefix ~ 0;
+        auto end   = prefix ~ 0xff;
         return getRange(
             start, end, limit, mode, snapshot, reverse, iteration, callback);
     }
