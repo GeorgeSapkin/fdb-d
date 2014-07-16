@@ -2,6 +2,7 @@ module fdb.tuple.packer;
 
 import
     std.exception,
+    std.range,
     std.string,
     std.traits;
 
@@ -38,6 +39,15 @@ private class Packer
     {
         bytes ~= TupleType.Utf8;
         bytes ~= cast(ubyte[])(value.toStringz[0..value.length + 1]);
+    }
+
+    void write(R)(const R r)
+    if(isInputRange!R && !is(R == string))
+    {
+        foreach (const e; r)
+        {
+            write(e);
+        }
     }
 }
 
