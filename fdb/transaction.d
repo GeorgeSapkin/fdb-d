@@ -168,6 +168,21 @@ class Transaction
         return getRange(info, callback);
     }
 
+    auto getPrefixedRange(
+        Selector               prefix,
+        int                    limit,
+        StreamingMode          mode,
+        bool                   snapshot,
+        bool                   reverse,
+        int                    iteration = 1,
+        KeyValueFutureCallback callback = null)
+    {
+        auto start = Selector(prefix.key ~ 0,    prefix.orEqual, prefix.offset);
+        auto end   = Selector(prefix.key ~ 0xff, prefix.orEqual, prefix.offset);
+        return getRange(
+            start, end, limit, mode, snapshot, reverse, iteration, callback);
+    }
+
     auto watch(Key key, VoidFutureCallback callback = null)
     {
         auto f = fdb_transaction_watch(
