@@ -10,4 +10,6 @@ public
         fdb.future,
         fdb.main,
         fdb.networkoptions,
+        fdb.range,
+        fdb.rangeinfo,
         fdb.transaction;

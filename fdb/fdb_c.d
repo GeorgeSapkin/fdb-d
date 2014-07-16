@@ -186,20 +186,20 @@ FDBFuture *     fdb_transaction_get_addresses_for_key(
 
 FDBFuture *     fdb_transaction_get_range(
     const(FDBTransaction *) tr,
-    ubyte *             begin_key_name,
-    int                 begin_key_name_length,
-    fdb_bool_t          begin_or_equal,
-    int                 begin_offset,
-    ubyte *             end_key_name,
-    int                 end_key_name_length,
-    fdb_bool_t          end_or_equal,
-    int                 end_offset,
-    int                 limit,
-    int                 target_bytes,
-    StreamingMode       mode,
-    int                 iteration,
-    fdb_bool_t          snapshot,
-    fdb_bool_t          reverse);
+    const ubyte *           begin_key_name,
+    const int               begin_key_name_length,
+    const fdb_bool_t        begin_or_equal,
+    const int               begin_offset,
+    const ubyte *           end_key_name,
+    const int               end_key_name_length,
+    const fdb_bool_t        end_or_equal,
+    const int               end_offset,
+    const int               limit,
+    const int               target_bytes,
+    const StreamingMode     mode,
+    const int               iteration,
+    const fdb_bool_t        snapshot,
+    const fdb_bool_t        reverse);
 
 void            fdb_transaction_set(
     const FDBTransaction * tr,

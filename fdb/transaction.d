@@ -9,14 +9,8 @@ import
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,
-    fdb.future;
-
-struct Selector
-{
-    Key  key;
-    bool orEqual;
-    int  offset;
-}
+    fdb.future,
+    fdb.rangeinfo;
 
 class Transaction
 {
@@ -131,38 +125,47 @@ class Transaction
     }
 
     auto getRange(
+        RangeInfo              info,
+        KeyValueFutureCallback callback = null) const
+    {
+        auto f = fdb_transaction_get_range(
+            tr,
+
+            &info.start.key[0],
+            cast(int)info.start.key.length,
+            cast(fdb_bool_t)info.start.orEqual,
+            info.start.offset,
+
+            &info.end.key[0],
+            cast(int)info.end.key.length,
+            cast(fdb_bool_t)info.end.orEqual,
+            info.end.offset,
+
+            info.limit,
+            0,
+            info.mode,
+            info.iteration,
+            info.snapshot,
+            info.reverse);
+
+        auto _future = startOrCreateFuture!KeyValueFuture(
+            f, this, info, callback);
+        return _future;
+    }
+
+    auto getRange(
         Selector               start,
         Selector               end,
         int                    limit,
         StreamingMode          mode,
-        int                    iteration,
         bool                   snapshot,
         bool                   reverse,
+        int                    iteration = 1,
         KeyValueFutureCallback callback = null)
     {
-
-        auto f = fdb_transaction_get_range(
-            tr,
-
-            &start.key[0],
-            cast(int)start.key.length,
-            cast(fdb_bool_t)start.orEqual,
-            start.offset,
-
-            &end.key[0],
-            cast(int)end.key.length,
-            cast(fdb_bool_t)end.orEqual,
-            end.offset,
-
-            limit,
-            0,
-            mode,
-            iteration,
-            snapshot,
-            reverse);
-
-        auto _future = startOrCreateFuture!KeyValueFuture(f, this, callback);
-        return _future;
+        auto info = RangeInfo(
+            start, end, limit, mode, iteration, snapshot, reverse);
+        return getRange(info, callback);
     }
 
     auto watch(Key key, VoidFutureCallback callback = null)

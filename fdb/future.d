@@ -10,39 +10,15 @@ import
     std.parallelism,
     std.traits;
 
-import std.stdio;
-
 import
     fdb.error,
     fdb.fdb_c,
+    fdb.range,
+    fdb.rangeinfo,
     fdb.transaction;
 
 private alias PKey      = ubyte *;
 private alias PValue    = ubyte *;
-
-class Record
-{
-    immutable Key   key;
-    immutable Value value;
-
-    this(immutable Key key, immutable Value value) pure
-    {
-        this.key   = key;
-        this.value = value;
-    }
-}
-
-class KeyValueResult
-{
-    const Record[] records;
-    const bool     more;
-
-    this(const Record[] records, const bool more) pure
-    {
-        this.records = records;
-        this.more    = more;
-    }
-}
 
 alias CompletionCallback = void delegate();
 
@@ -173,6 +149,7 @@ shared class FDBFutureBase(C, V)
             wait;
             shared fdb_error_t err;
             auto value = extractValue(future, err);
+            enforceError(err);
             return value;
         }
     }
@@ -245,14 +222,21 @@ shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
     }
 }
 
-alias KeyValueFutureCallback = FutureCallback!KeyValueResult;
+alias KeyValueFutureCallback = FutureCallback!RecordRange;
 
 shared class KeyValueFuture
-    : FDBFutureBase!(KeyValueFutureCallback, KeyValueResult)
+    : FDBFutureBase!(KeyValueFutureCallback, RecordRange)
 {
-    mixin FutureCtor!KeyValueFutureCallback;
+    const RangeInfo info;
 
-    override KeyValueResult extractValue(SH future, out SE err)
+    this(FutureHandle future, const Transaction tr, RangeInfo info)
+    {
+        super(future, tr);
+
+        this.info = cast(shared)info;
+    }
+
+    override RecordRange extractValue(SH future, out SE err)
     {
         FDBKeyValue * kvs;
         int len;
@@ -267,11 +251,15 @@ shared class KeyValueFuture
         if (err != FDBError.NONE)
             return typeof(return).init;
 
-        Record[] tuples = kvs[0..len]
+        Record[] records = kvs[0..len]
             .map!createRecord
             .array;
 
-        return new KeyValueResult(tuples, cast(bool)more);
+        return new RecordRange(
+            records,
+            cast(bool)more,
+            cast(RangeInfo)info,
+            cast(Transaction)tr);
     }
 
     static Record createRecord(ref FDBKeyValue kv) pure
@@ -337,9 +325,9 @@ shared class WatchFuture : VoidFuture
     }
 }
 
-auto createFuture(F)(FutureHandle f)
+auto createFuture(F, Args...)(Args args)
 {
-    auto _future = new shared F(f);
+    auto _future = new shared F(args);
     return _future;
 }
 
@@ -350,9 +338,11 @@ if(isSomeFunction!fun)
     return _future;
 }
 
-auto startOrCreateFuture(F, C)(FutureHandle f, const Transaction tr, C callback)
+auto startOrCreateFuture(F, C, Args...)(
+    Args args,
+    C callback)
 {
-    auto _future = new shared F(f, tr);
+    auto _future = new shared F(args);
     if (callback)
         _future.start(callback);
     return _future;
