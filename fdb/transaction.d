@@ -125,8 +125,8 @@ class Transaction
     }
 
     auto getRange(
-        const RangeInfo        info,
-        KeyValueFutureCallback callback = null) const
+        RangeInfo               info,
+        KeyValueFutureCallback  callback = null) const
     {
         auto f = fdb_transaction_get_range(
             tr,
@@ -154,14 +154,14 @@ class Transaction
     }
 
     auto getRange(
-        const Selector         start,
-        const Selector         end,
-        const int              limit        = 0,
-        const StreamingMode    mode         = StreamingMode.ITERATOR,
-        const bool             snapshot     = false,
-        const bool             reverse      = false,
-        const int              iteration    = 1,
-        KeyValueFutureCallback callback     = null) const
+        Selector                start,
+        Selector                end,
+        const int               limit       = 0,
+        const StreamingMode     mode        = StreamingMode.ITERATOR,
+        const bool              snapshot    = false,
+        const bool              reverse     = false,
+        const int               iteration   = 1,
+        KeyValueFutureCallback  callback    = null) const
     {
         auto info = RangeInfo(
             start, end, limit, mode, iteration, snapshot, reverse);
@@ -169,14 +169,14 @@ class Transaction
     }
 
     auto getRange(
-        const Key              start,
-        const Key              end,
-        const int              limit        = 0,
-        const StreamingMode    mode         = StreamingMode.ITERATOR,
-        const bool             snapshot     = false,
-        const bool             reverse      = false,
-        const int              iteration    = 1,
-        KeyValueFutureCallback callback     = null) const
+        const Key               start,
+        const Key               end,
+        const int               limit       = 0,
+        const StreamingMode     mode        = StreamingMode.ITERATOR,
+        const bool              snapshot    = false,
+        const bool              reverse     = false,
+        const int               iteration   = 1,
+        KeyValueFutureCallback  callback    = null) const
     {
         auto startSel = start.firstGreaterOrEqual;
         auto endSel   = end.firstGreaterOrEqual;
@@ -185,13 +185,13 @@ class Transaction
     }
 
     auto getRangeStartsWith(
-        const Key              prefix,
-        const int              limit        = 0,
-        const StreamingMode    mode         = StreamingMode.ITERATOR,
-        const bool             snapshot     = false,
-        const bool             reverse      = false,
-        const int              iteration    = 1,
-        KeyValueFutureCallback callback     = null) const
+        const Key               prefix,
+        const int               limit       = 0,
+        const StreamingMode     mode        = StreamingMode.ITERATOR,
+        const bool              snapshot    = false,
+        const bool              reverse     = false,
+        const int               iteration   = 1,
+        KeyValueFutureCallback  callback    = null) const
     {
         auto start = prefix;
         auto end   = prefix.getEndPrefix;
@@ -214,7 +214,6 @@ class Transaction
         const Key               end,
         const ConflictRangeType type) const
     {
-
         auto err = fdb_transaction_add_conflict_range(
             tr,
             &start[0],

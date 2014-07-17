@@ -23,6 +23,7 @@ class RecordRange
     private Record[]    records;
     private RangeInfo   info;
     private bool        _more;
+    private Record      last;
 
     @property auto more()
     {
@@ -39,13 +40,15 @@ class RecordRange
     this(
         Record[]            records,
         const bool          more,
-        const RangeInfo     info,
+        RangeInfo           info,
         const Transaction   tr)
     {
-        this.records =  records;
-        this._more =    more;
-        this.info =     info;
-        this.tr =       tr;
+        this.records    = records;
+        this.last       = records[$];
+
+        this._more      = more;
+        this.info       = info;
+        this.tr         = tr;
     }
 
     @property bool empty() const
@@ -61,18 +64,25 @@ class RecordRange
     auto popFront()
     {
         records = records[1 .. $];
-        if (records.length == 0 && more)
-        {
+        if (empty && more)
             fetchNextBatch;
-        }
     }
 
     private void fetchNextBatch()
     {
         info.iteration++;
-        auto future = tr.getRange(info);
-        auto batch  = future.getValue;
-        records    ~= batch.records;
-        _more       = batch.more;
+        if (info.limit > 0)
+            info.limit -= records.length;
+
+        if (info.reverse)
+            info.end    = firstGreaterOrEqual(last.key);
+        else
+            info.start  = firstGreaterThan(last.key);
+
+        auto future     = tr.getRange(info);
+        auto batch      = future.getValue;
+        records        ~= batch.records;
+        last            = records[$];
+        _more           = batch.more;
     }
 }

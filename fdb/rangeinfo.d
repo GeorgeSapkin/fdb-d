@@ -6,16 +6,16 @@ import
 
 struct Selector
 {
-    const Key     key;
-    const bool    orEqual;
-    const int     offset;
+    Key     key;
+    bool    orEqual;
+    int     offset;
 }
 
 struct RangeInfo
 {
-    const Selector      start;
-    const Selector      end;
-    const int           limit;
+    Selector            start;
+    Selector            end;
+    int                 limit;
     const StreamingMode mode;
     int                 iteration;
     const bool          snapshot;
@@ -31,20 +31,20 @@ struct RangeInfo
 
 auto lastLessThan(const Key key)
 {
-    return Selector(key, false, 0);
+    return Selector(key.dup, false, 0);
 }
 
 auto lastLessOrEqual(const Key key)
 {
-    return Selector(key, true, 0);
+    return Selector(key.dup, true, 0);
 }
 
 auto firstGreaterThan(const Key key)
 {
-    return Selector(key, true, 1);
+    return Selector(key.dup, true, 1);
 }
 
 auto firstGreaterOrEqual(const Key key)
 {
-    return Selector(key, false, 1);
+    return Selector(key.dup, false, 1);
 }
