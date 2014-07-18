@@ -23,7 +23,6 @@ class RecordRange
     private Record[]    records;
     private RangeInfo   info;
     private bool        _more;
-    private Record      last;
 
     @property auto more()
     {
@@ -44,7 +43,6 @@ class RecordRange
         const Transaction   tr)
     {
         this.records    = records;
-        this.last       = records[$];
 
         this._more      = more;
         this.info       = info;
@@ -71,18 +69,9 @@ class RecordRange
     private void fetchNextBatch()
     {
         info.iteration++;
-        if (info.limit > 0)
-            info.limit -= records.length;
-
-        if (info.reverse)
-            info.end    = firstGreaterOrEqual(last.key);
-        else
-            info.start  = firstGreaterThan(last.key);
-
         auto future     = tr.getRange(info);
         auto batch      = future.getValue;
         records        ~= batch.records;
-        last            = records[$];
         _more           = batch.more;
     }
 }
