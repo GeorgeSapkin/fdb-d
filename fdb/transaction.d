@@ -179,7 +179,7 @@ class Transaction
         KeyValueFutureCallback  callback    = null) const
     {
         auto startSel = start.firstGreaterOrEqual;
-        auto endSel   = end.lastLessOrEqual;
+        auto endSel   = end.firstGreaterOrEqual;
         return getRange(
             startSel, endSel, limit, mode, snapshot, reverse, iteration, callback);
     }
