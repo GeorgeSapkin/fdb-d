@@ -269,22 +269,23 @@ shared class KeyValueFuture
         return Record(key, value);
     }
 
-    auto forEach(alias fun)()
-    if (isSomeFunction!fun)
+    auto forEach(alias fun, alias cb)()
+    if (isSomeFunction!fun && isSomeFunction!cb)
     {
-        auto f = createFuture!(foreachTask!fun)(this);
+        auto f = createFuture!(foreachTask!(fun, cb))(this);
         return f;
     }
 
-    static void foreachTask(alias fun)(
+    static void foreachTask(alias fun, alias cb)(
         shared KeyValueFuture   future,
         void delegate()         notify)
-    if (isSomeFunction!fun)
+    if (isSomeFunction!fun && isSomeFunction!cb)
     {
         auto range = future.getValue;
         foreach (kv; range)
             fun(kv);
         notify();
+        cb();
     }
 }
 
