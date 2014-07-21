@@ -222,7 +222,8 @@ shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
     }
 }
 
-alias KeyValueFutureCallback = FutureCallback!RecordRange;
+alias KeyValueFutureCallback    = FutureCallback!RecordRange;
+alias ForEachCallback           = void delegate(Record record);
 
 shared class KeyValueFuture
     : FDBFutureBase!(KeyValueFutureCallback, RecordRange)
@@ -269,17 +270,17 @@ shared class KeyValueFuture
         return Record(key, value);
     }
 
-    auto forEach(alias fun, alias cb)()
-    if (isSomeFunction!fun && isSomeFunction!cb)
+    auto forEach(ForEachCallback fun, CompletionCallback cb)
     {
-        auto f = createFuture!(foreachTask!(fun, cb))(this);
+        auto f = createFuture!foreachTask(this, fun, cb);
         return f;
     }
 
-    static void foreachTask(alias fun, alias cb)(
+    static void foreachTask(
         shared KeyValueFuture   future,
+        ForEachCallback         fun,
+        CompletionCallback      cb,
         void delegate()         notify)
-    if (isSomeFunction!fun && isSomeFunction!cb)
     {
         auto range = future.getValue;
         foreach (kv; range)
