@@ -269,7 +269,7 @@ shared class KeyValueFuture
         return Record(key, value);
     }
 
-    auto apply(alias fun)()
+    auto forEach(alias fun)()
     if (isSomeFunction!fun)
     {
         auto f = createFuture!(foreachTask!fun)(this);
