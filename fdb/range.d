@@ -6,7 +6,7 @@ import
     fdb.rangeinfo,
     fdb.transaction;
 
-class Record
+struct Record
 {
     immutable Key   key;
     immutable Value value;
@@ -18,7 +18,7 @@ class Record
     }
 }
 
-class RecordRange
+struct RecordRange
 {
     private Record[]    records;
     private RangeInfo   info;
@@ -43,7 +43,6 @@ class RecordRange
         const Transaction   tr)
     {
         this.records    = records;
-
         this._more      = more;
         this.info       = info;
         this.tr         = tr;
@@ -66,12 +65,17 @@ class RecordRange
             fetchNextBatch;
     }
 
+    auto save()
+    {
+        return this;
+    }
+
     private void fetchNextBatch()
     {
         info.iteration++;
-        auto future     = tr.getRange(info);
-        auto batch      = future.getValue;
-        records        ~= batch.records;
-        _more           = batch.more;
+        auto future = tr.getRange(info);
+        auto batch  = future.getValue;
+        records    ~= batch.records;
+        _more       = batch.more;
     }
 }

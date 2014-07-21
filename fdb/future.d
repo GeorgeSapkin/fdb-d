@@ -139,12 +139,12 @@ shared class FDBFutureBase(C, V)
         }
     }
 
-    /**
-     * Blocks until value is loaded and returns it
-     */
-    V getValue()
+    static if (!is(V == void))
     {
-        static if (!is(V == void))
+        /**
+         * Blocks until value is loaded and returns it
+         */
+        V getValue()
         {
             wait;
             shared fdb_error_t err;
@@ -255,7 +255,7 @@ shared class KeyValueFuture
             .map!createRecord
             .array;
 
-        return new RecordRange(
+        return RecordRange(
             records,
             cast(bool)more,
             cast(RangeInfo)info,
@@ -266,7 +266,25 @@ shared class KeyValueFuture
     {
         auto key   = (cast(Key)  kv.key  [0..kv.key_length  ]).idup;
         auto value = (cast(Value)kv.value[0..kv.value_length]).idup;
-        return new Record(key, value);
+        return Record(key, value);
+    }
+
+    auto apply(alias fun)()
+    if (isSomeFunction!fun)
+    {
+        auto f = createFuture!(foreachTask!fun)(this);
+        return f;
+    }
+
+    static void foreachTask(alias fun)(
+        shared KeyValueFuture   future,
+        void delegate()         notify)
+    if (isSomeFunction!fun)
+    {
+        auto range = future.getValue;
+        foreach (kv; range)
+            fun(kv);
+        notify();
     }
 }
 
@@ -332,7 +350,7 @@ auto createFuture(F, Args...)(Args args)
 }
 
 auto createFuture(alias fun, Args ...)(Args args)
-if(isSomeFunction!fun)
+if (isSomeFunction!fun)
 {
     auto _future = new Future!(fun, Args)(args);
     return _future;
