@@ -129,10 +129,10 @@ void doTransactionWorker(
     VoidFutureCallback  commitCallback,
     CompletionCallback  futureCompletionCallback)
 {
-    retryLoop(tr, func, (error)
+    retryLoop(tr, func, (ex)
     {
-        commitCallback(error);
-        futureCompletionCallback();
+        commitCallback(ex);
+        futureCompletionCallback(ex);
     });
 }
 
@@ -141,10 +141,10 @@ private void retryLoop(
     WorkFunc func,
     VoidFutureCallback cb)
 {
-    func(tr, (err)
+    func(tr, (ex)
     {
-        if (err)
-            onError(tr, err, func, cb);
+        if (ex)
+            onError(tr, ex, func, cb);
         else
             tr.commit((commitErr)
             {
@@ -158,11 +158,11 @@ private void retryLoop(
 
 private void onError(
     Transaction tr,
-    fdb_error_t err,
+    FDBException ex,
     WorkFunc func,
     VoidFutureCallback cb)
 {
-    tr.onError(err, (retryErr)
+    tr.onError(ex, (retryErr)
     {
         if (retryErr)
             cb(retryErr);

@@ -13,6 +13,18 @@ enum FDBError : uint
     UNSUPPORTED_API = 2033,
 }
 
+class FDBException : Exception
+{
+    const fdb_error_t err;
+
+    this(const fdb_error_t err)
+    {
+        auto msg = err.message;
+        super(msg, "", 0, null);
+        this.err = err;
+    }
+}
+
 auto message(const fdb_error_t err)
 {
     return fdb_get_error(err).to!string;
@@ -20,5 +32,5 @@ auto message(const fdb_error_t err)
 
 auto enforceError(const fdb_error_t err)
 {
-    return enforce(err == FDBError.NONE, err.message);
+    return enforce(err == FDBError.NONE, new FDBException(err));
 }

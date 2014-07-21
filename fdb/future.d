@@ -20,7 +20,7 @@ import
 private alias PKey      = ubyte *;
 private alias PValue    = ubyte *;
 
-alias CompletionCallback = void delegate();
+alias CompletionCallback = void delegate(Exception ex);
 
 class Future(alias fun, Args...)
 {
@@ -33,7 +33,12 @@ class Future(alias fun, Args...)
     {
         futureSemaphore = new Semaphore;
 
-        t = task!fun(args, &notify);
+        t = task!fun(
+            args,
+            (Exception ex)
+            {
+                notify;
+            });
         taskPool.put(t);
     }
 
@@ -48,13 +53,16 @@ class Future(alias fun, Args...)
         return this;
     }
 
-    V getValue()
+    static if (!is(V == void))
     {
-        return t.yieldForce;
+        V getValue()
+        {
+            return t.yieldForce;
+        }
     }
 }
 
-alias FutureCallback(V) = void delegate(fdb_error_t err, V value);
+alias FutureCallback(V) = void delegate(FDBException ex, V value);
 
 shared class FDBFutureBase(C, V)
 {
@@ -128,13 +136,13 @@ shared class FDBFutureBase(C, V)
             {
                 extractValue(cast(shared)f, err);
                 if (callbackFunc)
-                    (cast(C)callbackFunc)(err);
+                    (cast(C)callbackFunc)(new FDBException(err));
             }
             else
             {
                 auto value = extractValue(cast(shared)f, err);
                 if (callbackFunc)
-                    (cast(C)callbackFunc)(err, value);
+                    (cast(C)callbackFunc)(new FDBException(err), value);
             }
         }
     }
@@ -209,7 +217,7 @@ shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
     }
 }
 
-alias VoidFutureCallback = void delegate(fdb_error_t err);
+alias VoidFutureCallback = void delegate(FDBException ex);
 
 shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 {
@@ -276,17 +284,26 @@ shared class KeyValueFuture
         return f;
     }
 
+    // TODO : this is bullshit signature
     static void foreachTask(
         shared KeyValueFuture   future,
         ForEachCallback         fun,
         CompletionCallback      cb,
-        void delegate()         notify)
+        CompletionCallback      notifyCb)
     {
-        auto range = future.getValue;
-        foreach (kv; range)
-            fun(kv);
-        notify();
-        cb();
+        try
+        {
+            auto range = future.getValue;
+            foreach (kv; range)
+                fun(kv);
+            cb(null);
+            notifyCb(null);
+        }
+        catch (Exception ex)
+        {
+            cb(ex);
+            notifyCb(ex);
+        }
     }
 }
 

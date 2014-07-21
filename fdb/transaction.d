@@ -235,10 +235,10 @@ class Transaction
     }
 
     auto onError(
-        const fdb_error_t   err,
+        const FDBException  ex,
         VoidFutureCallback  callback = null) const
     {
-        auto f = fdb_transaction_on_error(tr, err);
+        auto f = fdb_transaction_on_error(tr, ex.err);
         auto _future = startOrCreateFuture!VoidFuture(f, this, callback);
         return _future;
     }
