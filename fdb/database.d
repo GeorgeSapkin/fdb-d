@@ -158,15 +158,18 @@ private void retryLoop(
 
 private void onError(
     Transaction tr,
-    FDBException ex,
+    Exception ex,
     WorkFunc func,
     VoidFutureCallback cb)
 {
-    tr.onError(ex, (retryErr)
-    {
-        if (retryErr)
-            cb(retryErr);
-        else
-            retryLoop(tr, func, cb);
-    });
+    if (auto fdbex = cast(FDBException)ex)
+        tr.onError(fdbex, (retryErr)
+        {
+            if (retryErr)
+                cb(retryErr);
+            else
+                retryLoop(tr, func, cb);
+        });
+    else
+        cb(ex);
 };

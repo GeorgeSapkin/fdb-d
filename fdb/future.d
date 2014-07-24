@@ -17,9 +17,6 @@ import
     fdb.rangeinfo,
     fdb.transaction;
 
-private alias PKey      = ubyte *;
-private alias PValue    = ubyte *;
-
 alias CompletionCallback = void delegate(Exception ex);
 
 class Future(alias fun, Args...)
@@ -62,7 +59,7 @@ class Future(alias fun, Args...)
     }
 }
 
-alias FutureCallback(V) = void delegate(FDBException ex, V value);
+alias FutureCallback(V) = void delegate(Exception ex, V value);
 
 shared class FDBFutureBase(C, V)
 {
@@ -179,6 +176,8 @@ shared class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
 {
     mixin FutureCtor!ValueFutureCallback;
 
+    private alias PValue = ubyte *;
+
     override Value extractValue(SH future, out SE err)
     {
         PValue value;
@@ -202,6 +201,8 @@ shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
 {
     mixin FutureCtor!KeyFutureCallback;
 
+    private alias PKey = ubyte *;
+
     override Value extractValue(SH future, out SE err)
     {
         PKey key;
@@ -217,7 +218,7 @@ shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
     }
 }
 
-alias VoidFutureCallback = void delegate(FDBException ex);
+alias VoidFutureCallback = void delegate(Exception ex);
 
 shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 {
@@ -289,7 +290,7 @@ shared class KeyValueFuture
         shared KeyValueFuture   future,
         ForEachCallback         fun,
         CompletionCallback      cb,
-        CompletionCallback      notifyCb)
+        CompletionCallback      futureCb)
     {
         try
         {
@@ -297,12 +298,12 @@ shared class KeyValueFuture
             foreach (kv; range)
                 fun(kv);
             cb(null);
-            notifyCb(null);
+            futureCb(null);
         }
         catch (Exception ex)
         {
             cb(ex);
-            notifyCb(ex);
+            futureCb(ex);
         }
     }
 }
@@ -368,7 +369,7 @@ auto createFuture(F, Args...)(Args args)
     return _future;
 }
 
-auto createFuture(alias fun, Args ...)(Args args)
+auto createFuture(alias fun, Args...)(Args args)
 if (isSomeFunction!fun)
 {
     auto _future = new Future!(fun, Args)(args);
@@ -385,7 +386,7 @@ auto startOrCreateFuture(F, C, Args...)(
     return _future;
 }
 
-void wait(F ...)(F futures)
+void wait(F...)(F futures)
 {
     foreach (f; futures)
         f.wait;
