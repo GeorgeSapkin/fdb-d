@@ -163,6 +163,7 @@ private void onError(
     VoidFutureCallback cb)
 {
     if (auto fdbex = cast(FDBException)ex)
+    {
         tr.onError(fdbex, (retryErr)
         {
             if (retryErr)
@@ -170,6 +171,10 @@ private void onError(
             else
                 retryLoop(tr, func, cb);
         });
+    }
     else
+    {
+        tr.cancel();
         cb(ex);
+    }
 };
