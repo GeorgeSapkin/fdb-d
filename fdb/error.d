@@ -34,3 +34,8 @@ auto enforceError(const fdb_error_t err)
 {
     return enforce(err == FDBError.NONE, new FDBException(err));
 }
+
+Exception toException(const fdb_error_t err)
+{
+    return (err == FDBError.NONE) ? null : new FDBException(err);
+}

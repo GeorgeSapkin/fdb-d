@@ -133,13 +133,13 @@ shared class FDBFutureBase(C, V)
             {
                 extractValue(cast(shared)f, err);
                 if (callbackFunc)
-                    (cast(C)callbackFunc)(new FDBException(err));
+                    (cast(C)callbackFunc)(err.toException);
             }
             else
             {
                 auto value = extractValue(cast(shared)f, err);
                 if (callbackFunc)
-                    (cast(C)callbackFunc)(new FDBException(err), value);
+                    (cast(C)callbackFunc)(err.toException, value);
             }
         }
     }
@@ -285,7 +285,6 @@ shared class KeyValueFuture
         return f;
     }
 
-    // TODO : this is bullshit signature
     static void foreachTask(
         shared KeyValueFuture   future,
         ForEachCallback         fun,
