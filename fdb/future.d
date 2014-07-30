@@ -232,7 +232,9 @@ shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 }
 
 alias KeyValueFutureCallback    = FutureCallback!RecordRange;
-alias ForEachCallback           = void delegate(Record record);
+alias ForEachCallback           = void delegate(
+    Record record,
+    out bool breakLoop);
 
 shared class KeyValueFuture
     : FDBFutureBase!(KeyValueFutureCallback, RecordRange)
@@ -295,7 +297,11 @@ shared class KeyValueFuture
         {
             auto range = future.getValue;
             foreach (kv; range)
-                fun(kv);
+            {
+                bool breakLoop;
+                fun(kv, breakLoop);
+                if (breakLoop) break;
+            }
             cb(null);
             futureCb(null);
         }
