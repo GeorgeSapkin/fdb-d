@@ -19,49 +19,112 @@ import
 
 alias CompletionCallback = void delegate(Exception ex);
 
-class Future(alias fun, Args...)
+shared class FutureBase(V)
+{
+    static if (!is(V == void))
+    {
+        protected V _value;
+        @property auto value()
+        {
+            enforce(exception is null, cast(Exception)exception);
+            return _value;
+        }
+    }
+
+    protected Exception _exception;
+    @property auto exception()
+    {
+        return _exception;
+    }
+
+    abstract shared FutureBase!V wait();
+}
+
+shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
 {
     alias V = ReturnType!fun;
-    private Task!(fun, ParameterTypeTuple!fun) * t;
+    alias T = Task!(fun, ParameterTypeTuple!fun) *;
+    private T t;
 
     private Semaphore futureSemaphore;
 
     this(Args args)
     {
-        futureSemaphore = new Semaphore;
+        futureSemaphore = cast(shared)new Semaphore;
 
-        t = task!fun(
+        t = cast(shared)task!fun(
             args,
             (Exception ex)
             {
                 notify;
             });
-        taskPool.put(t);
+        taskPool.put(cast(T)t);
     }
 
     void notify()
     {
-        futureSemaphore.notify;
+        (cast(Semaphore)futureSemaphore).notify;
     }
 
-    auto wait()
+    override shared FutureBase!V wait()
     {
-        futureSemaphore.wait;
-        return this;
+        (cast(Semaphore)futureSemaphore).wait;
+
+        try
+        {
+            static if (!is(V == void))
+                _value = (cast(T)t).yieldForce;
+            else
+                (cast(T)t).yieldForce;
+        }
+        catch (Exception ex)
+        {
+            _exception = cast(shared)ex;
+        }
+
+        return cast(FutureBase!V) this;
+    }
+}
+
+class BasicFuture(V) : FutureBase!V
+{
+    private Semaphore futureSemaphore;
+
+    this()
+    {
+        futureSemaphore = new Semaphore;
     }
 
     static if (!is(V == void))
     {
-        V getValue()
+        void notify(Exception ex, ref V value)
         {
-            return t.yieldForce;
+            _exception  = ex;
+            _value      = value;
+
+            futureSemaphore.notify;
         }
+    }
+    else
+    {
+        void notify(Exception ex)
+        {
+            _exception  = ex;
+
+            futureSemaphore.notify;
+        }
+    }
+
+    override FutureBase!V wait()
+    {
+        futureSemaphore.wait;
+        return this;
     }
 }
 
 alias FutureCallback(V) = void delegate(Exception ex, V value);
 
-shared class FDBFutureBase(C, V)
+shared class FDBFutureBase(C, V) : FutureBase!V
 {
     private alias SF = shared FDBFutureBase!(C, V);
     private alias SH = shared FutureHandle;
@@ -104,14 +167,29 @@ shared class FDBFutureBase(C, V)
         return this;
     }
 
-    auto wait(C callbackFunc = null)
+    shared FutureBase!V wait(C callbackFunc)
     {
         if (callbackFunc)
             start(callbackFunc);
 
-        enforceError(fdb_future_block_until_ready(cast(FutureHandle)future));
+        shared err = fdb_future_block_until_ready(cast(FutureHandle)future);
+        if (err != FDBError.NONE)
+        {
+            _exception = cast(shared)err.toException;
+            return cast(FutureBase!V)this;
+        }
 
-        return this;
+        static if (!is(V == void))
+            _value  = cast(shared)extractValue(future, err);
+
+        _exception  = cast(shared)err.toException;
+
+        return cast(FutureBase!V)this;
+    }
+
+    override shared FutureBase!V wait()
+    {
+        return wait(null);
     }
 
     extern(C) static void futureReady(SH f, SF thiz)
@@ -141,21 +219,6 @@ shared class FDBFutureBase(C, V)
                 if (callbackFunc)
                     (cast(C)callbackFunc)(err.toException, value);
             }
-        }
-    }
-
-    static if (!is(V == void))
-    {
-        /**
-         * Blocks until value is loaded and returns it
-         */
-        V getValue()
-        {
-            wait;
-            shared fdb_error_t err;
-            auto value = extractValue(future, err);
-            enforceError(err);
-            return value;
         }
     }
 
@@ -276,8 +339,8 @@ shared class KeyValueFuture
 
     static Record createRecord(ref FDBKeyValue kv) pure
     {
-        auto key   = (cast(Key)  kv.key  [0..kv.key_length  ]).idup;
-        auto value = (cast(Value)kv.value[0..kv.value_length]).idup;
+        auto key   = (cast(Key)  kv.key  [0..kv.key_length  ]).dup;
+        auto value = (cast(Value)kv.value[0..kv.value_length]).dup;
         return Record(key, value);
     }
 
@@ -295,7 +358,9 @@ shared class KeyValueFuture
     {
         try
         {
-            auto range = future.getValue;
+            // This will block until value is ready
+            future.wait;
+            auto range = cast(RecordRange)future.value;
             foreach (kv; range)
             {
                 bool breakLoop;
@@ -377,7 +442,7 @@ auto createFuture(F, Args...)(Args args)
 auto createFuture(alias fun, Args...)(Args args)
 if (isSomeFunction!fun)
 {
-    auto _future = new Future!(fun, Args)(args);
+    auto _future = new shared FunctionFuture!(fun, Args)(args);
     return _future;
 }
 

@@ -8,10 +8,10 @@ import
 
 struct Record
 {
-    immutable Key   key;
-    immutable Value value;
+    Key   key;
+    Value value;
 
-    this(immutable Key key, immutable Value value) pure
+    this(Key key, Value value) pure
     {
         this.key   = key;
         this.value = value;
@@ -23,6 +23,7 @@ struct RecordRange
     private Record[]    records;
     private RangeInfo   info;
     private bool        _more;
+    private Transaction tr;
 
     @property auto more()
     {
@@ -34,13 +35,11 @@ struct RecordRange
         return records.length;
     }
 
-    const Transaction   tr;
-
     this(
-        Record[]            records,
-        const bool          more,
-        RangeInfo           info,
-        const Transaction   tr)
+        Record[]    records,
+        const bool  more,
+        RangeInfo   info,
+        Transaction tr)
     {
         this.records    = records;
         this._more      = more;
@@ -53,7 +52,7 @@ struct RecordRange
         return records.length == 0;
     }
 
-    auto front() const
+    auto front()
     {
         return records[0];
     }
@@ -74,7 +73,7 @@ struct RecordRange
     {
         info.iteration++;
         auto future = tr.getRange(info);
-        auto batch  = future.getValue;
+        auto batch  = cast(RecordRange)future.value;
         records    ~= batch.records;
         _more       = batch.more;
     }

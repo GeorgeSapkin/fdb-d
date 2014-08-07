@@ -13,13 +13,13 @@ struct Selector
 
 struct RangeInfo
 {
-    Selector            start;
-    Selector            end;
-    int                 limit;
-    const StreamingMode mode;
-    int                 iteration;
-    const bool          snapshot;
-    const bool          reverse;
+    Selector        start;
+    Selector        end;
+    int             limit;
+    StreamingMode   mode;
+    int             iteration;
+    bool            snapshot;
+    bool            reverse;
 }
 
 /*
