@@ -32,7 +32,7 @@ auto message(const fdb_error_t err)
 
 auto enforceError(const fdb_error_t err)
 {
-    return enforce(err == FDBError.NONE, new FDBException(err));
+    return enforce(err == FDBError.NONE, err.toException);
 }
 
 Exception toException(const fdb_error_t err)
