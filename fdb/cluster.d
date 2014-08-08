@@ -36,15 +36,15 @@ class Cluster
 
     auto openDatabase(const string dbName = "DB")
     {
-        auto f = fdb_cluster_create_database(
+        auto fh = fdb_cluster_create_database(
             ch,
             dbName.toStringz(),
             cast(int)dbName.length);
-        scope auto _future = createFuture!VoidFuture(f); 
-        _future.wait();
+        scope auto future = createFuture!VoidFuture(fh);
+        future.wait;
 
-        DatabaseHandle database;
-        enforceError(fdb_future_get_database(f, &database));
-        return new Database(this, database);
+        DatabaseHandle dbh;
+        fdb_future_get_database(fh, &dbh).enforceError;
+        return new Database(this, dbh);
     }
 }

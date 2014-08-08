@@ -525,7 +525,7 @@ class Transaction
 
     private void setTransactionOption(const TransactionOption op) const
     {
-        enforceError(fdb_transaction_set_option(th, op, null, 0));
+        fdb_transaction_set_option(th, op, null, 0).enforceError;
     }
 
     private void setTransactionOption(

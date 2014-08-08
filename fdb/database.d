@@ -40,9 +40,9 @@ class Database
 
     auto createTransaction() const
     {
-        TransactionHandle tr;
-        enforceError(fdb_database_create_transaction(dbh, &tr));
-        return new Transaction(this, tr);
+        TransactionHandle th;
+        fdb_database_create_transaction(dbh, &th).enforceError;
+        return new Transaction(this, th);
     }
 
     /**

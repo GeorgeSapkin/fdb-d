@@ -28,7 +28,7 @@ shared static this()
 
 private void selectAPIVersion(const int apiVersion)
 {
-    enforceError(fdb_select_api_version(apiVersion));
+    fdb_select_api_version(apiVersion).enforceError;
 }
 
 auto networkThread()
@@ -39,7 +39,7 @@ auto networkThread()
 private void runNetwork()
 {
     NetworkOptions.init;
-    enforceError(fdb_setup_network);
+    fdb_setup_network.enforceError;
     networkTask = task!networkThread;
     networkTask.executeInNewThread;
 }
@@ -53,20 +53,20 @@ void startNetwork()
 
 void stopNetwork()
 {
-    enforceError(fdb_stop_network);
+    fdb_stop_network.enforceError;
     if (networkTask)
-        enforceError(networkTask.yieldForce);
+        networkTask.yieldForce.enforceError;
     networkStarted = false;
 }
 
 auto createCluster(const string clusterFilePath = null)
 {
-    auto f = fdb_create_cluster(clusterFilePath.toStringz);
-    scope auto _future = createFuture!VoidFuture(f); 
-    _future.wait();
+    auto fh = fdb_create_cluster(clusterFilePath.toStringz);
+    scope auto future = createFuture!VoidFuture(fh);
+    future.wait;
 
-    ClusterHandle cluster;
-    enforceError(fdb_future_get_cluster(f, &cluster));
+    ClusterHandle ch;
+    fdb_future_get_cluster(fh, &ch).enforceError;
 
-    return new Cluster(cluster);
+    return new Cluster(ch);
 }
