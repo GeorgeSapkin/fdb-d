@@ -14,10 +14,10 @@ import
 
 class Transaction
 {
-    private const Database          db;
-    private const TransactionHandle th;
+    private const Database      db;
+    private TransactionHandle   th;
 
-    this(const Database db, const TransactionHandle th)
+    this(const Database db, TransactionHandle th)
     {
         this.db = db;
         this.th = th;
@@ -30,7 +30,11 @@ class Transaction
 
     void destroy()
     {
-        fdb_transaction_destroy(th);
+        if (th)
+        {
+            fdb_transaction_destroy(th);
+            th = null;
+        }
     }
 
     void set(const Key key, const Value value) const
