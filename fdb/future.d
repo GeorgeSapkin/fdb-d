@@ -435,31 +435,31 @@ shared class WatchFuture : VoidFuture
 
 auto createFuture(T)()
 {
-    auto _future = new shared BasicFuture!T;
-    return _future;
+    auto future = new shared BasicFuture!T;
+    return future;
 }
 
 auto createFuture(F, Args...)(Args args)
 {
-    auto _future = new shared F(args);
-    return _future;
+    auto future = new shared F(args);
+    return future;
 }
 
 auto createFuture(alias fun, Args...)(Args args)
 if (isSomeFunction!fun)
 {
-    auto _future = new shared FunctionFuture!(fun, Args)(args);
-    return _future;
+    auto future = new shared FunctionFuture!(fun, Args)(args);
+    return future;
 }
 
 auto startOrCreateFuture(F, C, Args...)(
     Args args,
     C callback)
 {
-    auto _future = new shared F(args);
+    auto future = createFuture!F(args);
     if (callback)
-        _future.start(callback);
-    return _future;
+        future.start(callback);
+    return future;
 }
 
 void wait(F...)(F futures)
