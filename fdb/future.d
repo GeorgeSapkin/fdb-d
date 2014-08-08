@@ -295,7 +295,8 @@ shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 }
 
 alias KeyValueFutureCallback    = FutureCallback!RecordRange;
-alias ForEachCallback           = void delegate(
+alias ForEachCallback           = void delegate(Record record);
+alias BreakableForEachCallback  = void delegate(
     Record record,
     out bool breakLoop);
 
@@ -344,15 +345,15 @@ shared class KeyValueFuture
         return Record(key, value);
     }
 
-    auto forEach(ForEachCallback fun, CompletionCallback cb)
+    auto forEach(FC)(FC fun, CompletionCallback cb)
     {
-        auto f = createFuture!foreachTask(this, fun, cb);
+        auto f = createFuture!(foreachTask!FC)(this, fun, cb);
         return f;
     }
 
-    static void foreachTask(
+    static void foreachTask(FC)(
         shared KeyValueFuture   future,
-        ForEachCallback         fun,
+        FC                      fun,
         CompletionCallback      cb,
         CompletionCallback      futureCb)
     {
@@ -363,10 +364,16 @@ shared class KeyValueFuture
             auto range = cast(RecordRange)future.value;
             foreach (kv; range)
             {
-                bool breakLoop;
-                fun(kv, breakLoop);
-                if (breakLoop) break;
+                static if (arity!fun == 2)
+                {
+                    bool breakLoop;
+                    fun(kv, breakLoop);
+                    if (breakLoop) break;
+                }
+                else
+                    fun(kv);
             }
+
             cb(null);
             futureCb(null);
         }
