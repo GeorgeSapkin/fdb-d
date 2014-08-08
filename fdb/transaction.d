@@ -43,7 +43,7 @@ class Transaction
             cast(int)value.length);
     }
 
-    auto commit(VoidFutureCallback callback = null)
+    auto commit(VoidFutureCallback callback = null) const
     {
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
@@ -54,7 +54,7 @@ class Transaction
         }
     }
 
-    void cancel()
+    void cancel() const
     {
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
@@ -66,7 +66,7 @@ class Transaction
     /**
      * Resets transaction to its initial state
      */
-    void reset()
+    void reset() const
     {
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
