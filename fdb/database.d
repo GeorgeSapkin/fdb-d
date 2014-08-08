@@ -15,10 +15,10 @@ import
 
 class Database
 {
-    private const Cluster        cluster;
-    private const DatabaseHandle dbh;
+    private const Cluster   cluster;
+    private DatabaseHandle  dbh;
 
-    this(const Cluster cluster, const DatabaseHandle dbh)
+    this(const Cluster cluster, DatabaseHandle dbh)
     {
         this.cluster    = cluster;
         this.dbh        = dbh;
@@ -29,9 +29,13 @@ class Database
         destroy;
     }
 
-    void destroy() const
+    void destroy()
     {
-        fdb_database_destroy(dbh);
+        if (dbh)
+        {
+            fdb_database_destroy(dbh);
+            dbh = null;
+        }
     }
 
     auto createTransaction() const
