@@ -41,7 +41,7 @@ class Cluster
             dbName.toStringz(),
             cast(int)dbName.length);
         scope auto future = createFuture!VoidFuture(fh);
-        future.wait;
+        future.await;
 
         DatabaseHandle dbh;
         fdb_future_get_database(fh, &dbh).enforceError;

@@ -73,7 +73,7 @@ struct RecordRange
     {
         info.iteration++;
         auto future = tr.getRange(info);
-        auto batch  = cast(RecordRange)future.wait;
+        auto batch  = cast(RecordRange)future.await;
         records    ~= batch.records;
         _more       = batch.more;
     }

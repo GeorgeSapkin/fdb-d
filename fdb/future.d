@@ -28,7 +28,7 @@ shared class FutureBase(V)
 
     protected Exception exception;
 
-    abstract shared V wait();
+    abstract shared V await();
 }
 
 shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
@@ -57,7 +57,7 @@ shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
         (cast(Semaphore)futureSemaphore).notify;
     }
 
-    override shared V wait()
+    override shared V await()
     {
         (cast(Semaphore)futureSemaphore).wait;
 
@@ -108,7 +108,7 @@ shared class BasicFuture(V) : FutureBase!V
         }
     }
 
-    override shared V wait()
+    override shared V await()
     {
         (cast(Semaphore)futureSemaphore).wait;
         enforce(exception is null, cast(Exception)exception);
@@ -162,7 +162,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         return this;
     }
 
-    shared V wait(C callbackFunc)
+    shared V await(C callbackFunc)
     {
         if (callbackFunc)
             start(callbackFunc);
@@ -184,14 +184,14 @@ shared class FDBFutureBase(C, V) : FutureBase!V
             return cast(V)value;
     }
 
-    override shared V wait()
+    override shared V await()
     {
         import std.stdio;
 
         static if (!is(V == void))
-            return wait(null);
+            return await(null);
         else
-            wait(null);
+            await(null);
     }
 
     extern(C) static void futureReady(SFH f, SF thiz)
@@ -362,7 +362,7 @@ shared class KeyValueFuture
         try
         {
             // This will block until value is ready
-            auto range = cast(RecordRange)future.wait;
+            auto range = cast(RecordRange)future.await;
             foreach (kv; range)
             {
                 static if (arity!fun == 2)
@@ -470,8 +470,8 @@ auto startOrCreateFuture(F, C, Args...)(
     return future;
 }
 
-void wait(F...)(F futures)
+void await(F...)(F futures)
 {
     foreach (f; futures)
-        f.wait;
+        f.await;
 }

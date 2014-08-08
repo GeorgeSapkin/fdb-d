@@ -63,7 +63,7 @@ auto createCluster(const string clusterFilePath = null)
 {
     auto fh = fdb_create_cluster(clusterFilePath.toStringz);
     scope auto future = createFuture!VoidFuture(fh);
-    future.wait;
+    future.await;
 
     ClusterHandle ch;
     fdb_future_get_cluster(fh, &ch).enforceError;
