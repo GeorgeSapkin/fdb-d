@@ -23,21 +23,12 @@ shared class FutureBase(V)
 {
     static if (!is(V == void))
     {
-        protected V _value;
-        @property auto value()
-        {
-            enforce(exception is null, cast(Exception)exception);
-            return _value;
-        }
+        protected V value;
     }
 
-    protected Exception _exception;
-    @property auto exception()
-    {
-        return _exception;
-    }
+    protected Exception exception;
 
-    abstract shared FutureBase!V wait();
+    abstract shared V wait();
 }
 
 shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
@@ -66,23 +57,25 @@ shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
         (cast(Semaphore)futureSemaphore).notify;
     }
 
-    override shared FutureBase!V wait()
+    override shared V wait()
     {
         (cast(Semaphore)futureSemaphore).wait;
 
         try
         {
             static if (!is(V == void))
-                _value = (cast(T)t).yieldForce;
+                value = (cast(T)t).yieldForce;
             else
                 (cast(T)t).yieldForce;
         }
         catch (Exception ex)
         {
-            _exception = cast(shared)ex;
+            exception = cast(shared)ex;
         }
 
-        return cast(FutureBase!V) this;
+        enforce(exception is null, cast(Exception)exception);
+        static if (!is(V == void))
+            return value;
     }
 }
 
@@ -99,8 +92,8 @@ shared class BasicFuture(V) : FutureBase!V
     {
         void notify(Exception ex, ref V value)
         {
-            _exception  = cast(shared)ex;
-            _value      = cast(shared)value;
+            exception  = cast(shared)ex;
+            value      = cast(shared)value;
 
             (cast(Semaphore)futureSemaphore).notify;
         }
@@ -109,16 +102,18 @@ shared class BasicFuture(V) : FutureBase!V
     {
         void notify(Exception ex)
         {
-            _exception  = cast(shared)ex;
+            exception  = cast(shared)ex;
 
             (cast(Semaphore)futureSemaphore).notify;
         }
     }
 
-    override shared FutureBase!V wait()
+    override shared V wait()
     {
         (cast(Semaphore)futureSemaphore).wait;
-        return cast(FutureBase!V)this;
+        enforce(exception is null, cast(Exception)exception);
+        static if (!is(V == void))
+            return value;
     }
 }
 
@@ -167,7 +162,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         return this;
     }
 
-    shared FutureBase!V wait(C callbackFunc)
+    shared V wait(C callbackFunc)
     {
         if (callbackFunc)
             start(callbackFunc);
@@ -175,21 +170,28 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         shared err = fdb_future_block_until_ready(cast(FutureHandle)fh);
         if (err != FDBError.NONE)
         {
-            _exception = cast(shared)err.toException;
-            return cast(FutureBase!V)this;
+            exception = cast(shared)err.toException;
+            enforce(exception is null, cast(Exception)exception);
         }
 
         static if (!is(V == void))
-            _value  = cast(shared)extractValue(fh, err);
+            value  = cast(shared)extractValue(fh, err);
 
-        _exception  = cast(shared)err.toException;
+        exception  = cast(shared)err.toException;
 
-        return cast(FutureBase!V)this;
+        enforce(exception is null, cast(Exception)exception);
+        static if (!is(V == void))
+            return cast(V)value;
     }
 
-    override shared FutureBase!V wait()
+    override shared V wait()
     {
-        return wait(null);
+        import std.stdio;
+
+        static if (!is(V == void))
+            return wait(null);
+        else
+            wait(null);
     }
 
     extern(C) static void futureReady(SFH f, SF thiz)
@@ -360,8 +362,7 @@ shared class KeyValueFuture
         try
         {
             // This will block until value is ready
-            future.wait;
-            auto range = cast(RecordRange)future.value;
+            auto range = cast(RecordRange)future.wait;
             foreach (kv; range)
             {
                 static if (arity!fun == 2)
