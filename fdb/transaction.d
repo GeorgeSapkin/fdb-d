@@ -275,7 +275,8 @@ class Transaction
         return future;
     }
 
-    /* Performs an addition of little-endian integers. If the existing value
+    /**
+     * Performs an addition of little-endian integers. If the existing value
      * in the database is not present or shorter than ``param``, it is first
      * extended to the length of ``param`` with zero bytes.  If ``param`` is
      * shorter than the existing value in the database, the existing value is
@@ -295,7 +296,8 @@ class Transaction
     // Deprecated
     // ADD_MUTATION_TYPE("and", 6);
 
-    /* Performs a bitwise ``and`` operation.  If the existing value in the
+    /**
+     * Performs a bitwise ``and`` operation.  If the existing value in the
      * database is not present or shorter than ``param``, it is first extended
      * to the length of ``param`` with zero bytes.  If ``param`` is shorter than
      * the existing value in the database, the existing value is truncated to
@@ -309,7 +311,8 @@ class Transaction
     // Deprecated
     //ADD_MUTATION_TYPE("or", 7);
 
-    /* Performs a bitwise ``or`` operation.  If the existing value in the
+    /**
+     * Performs a bitwise ``or`` operation.  If the existing value in the
      * database is not present or shorter than ``param``, it is first extended
      * to the length of ``param`` with zero bytes.  If ``param`` is shorter than
      * the existing value in the database, the existing value is truncated to
@@ -323,7 +326,8 @@ class Transaction
     // Deprecated
     // ADD_MUTATION_TYPE("xor", 8);
 
-    /* Performs a bitwise ``xor`` operation.  If the existing value in the
+    /**
+     * Performs a bitwise ``xor`` operation.  If the existing value in the
      * database is not present or shorter than ``param``, it is first extended
      * to the length of ``param`` with zero bytes.  If ``param`` is shorter than
      * the existing value in the database, the existing value is truncated to
@@ -349,7 +353,8 @@ class Transaction
             type);
     }
 
-    /* The transaction, if not self-conflicting, may be committed a second time
+    /**
+     * The transaction, if not self-conflicting, may be committed a second time
      * after commit succeeds, in the event of a fault
      * Parameter: Option takes no parameter
      */
@@ -358,7 +363,8 @@ class Transaction
         setTransactionOption(TransactionOption.CAUSAL_WRITE_RISKY);
     }
 
-    /* The read version will be committed, and usually will be the latest
+    /**
+     * The read version will be committed, and usually will be the latest
      * committed, but might not be the latest committed in the event of a fault
      * or partition
      * Parameter: Option takes no parameter
@@ -374,7 +380,8 @@ class Transaction
         setTransactionOption(TransactionOption.CAUSAL_READ_DISABLE);
     }
 
-    /* The next write performed on this transaction will not generate a write
+    /**
+     * The next write performed on this transaction will not generate a write
      * conflict range. As a result, other transactions which read the key(s)
      * being modified by the next write will not conflict with this transaction.
      * Care needs to be taken when using this option on a transaction that is
@@ -395,7 +402,8 @@ class Transaction
         setTransactionOption(TransactionOption.CHECK_WRITES_ENABLE);
     }
 
-    /* Reads performed by a transaction will not see any prior mutations that
+    /**
+     * Reads performed by a transaction will not see any prior mutations that
      * occured in that transaction, instead seeing the value which was in the
      * database at the transaction's read version. This option may provide a
      * small performance benefit for the client, but also disables a number of
@@ -408,7 +416,8 @@ class Transaction
         setTransactionOption(TransactionOption.READ_YOUR_WRITES_DISABLE);
     }
 
-    /* Disables read-ahead caching for range reads. Under normal operation, a
+    /**
+     * Disables read-ahead caching for range reads. Under normal operation, a
      * transaction will read extra rows from the database into cache if range
      * reads are used to page through a series of data one row at a time (i.e.
      * if a range read with a one row limit is followed by another one row range
@@ -439,7 +448,8 @@ class Transaction
             TransactionOption.DURABILITY_DEV_NULL_IS_WEB_SCALE);
     }
 
-    /* Specifies that this transaction should be treated as highest priority and
+    /**
+     * Specifies that this transaction should be treated as highest priority and
      * that lower priority transactions should block behind this one. Use is
      * discouraged outside of low-level tools
      * Parameter: Option takes no parameter
@@ -449,7 +459,8 @@ class Transaction
         setTransactionOption(TransactionOption.PRIORITY_SYSTEM_IMMEDIATE);
     }
 
-    /* Specifies that this transaction should be treated as low priority and
+    /**
+     * Specifies that this transaction should be treated as low priority and
      * that default priority transactions should be processed first. Useful for
      * doing batch work simultaneously with latency-sensitive work
      * Parameter: Option takes no parameter
@@ -459,7 +470,8 @@ class Transaction
         setTransactionOption(TransactionOption.PRIORITY_BATCH);
     }
 
-    /* This is a write-only transaction which sets the initial configuration
+    /**
+     * This is a write-only transaction which sets the initial configuration
      * Parameter: Option takes no parameter
      */
     void setInitializeNewDatabase() const
@@ -467,7 +479,8 @@ class Transaction
         setTransactionOption(TransactionOption.INITIALIZE_NEW_DATABASE);
     }
 
-    /* Allows this transaction to read and modify system keys (those that start
+    /**
+     * Allows this transaction to read and modify system keys (those that start
      * with the byte 0xFF)
      * Parameter: Option takes no parameter
      */
@@ -482,7 +495,8 @@ class Transaction
         setTransactionOption(TransactionOption.DEBUG_DUMP);
     }
 
-    /* Set a timeout in milliseconds which, when elapsed, will cause the
+    /**
+     * Set a timeout in milliseconds which, when elapsed, will cause the
      * transaction automatically to be cancelled. Valid parameter values are
      * ``[0, INT_MAX]``. If set to 0, will disable all timeouts. All pending and
      * any future uses of the transaction will throw an exception. The
@@ -494,7 +508,8 @@ class Transaction
         setTransactionOption(TransactionOption.TIMEOUT, value);
     }
 
-    /* Set a maximum number of retries after which additional calls to onError
+    /**
+     * Set a maximum number of retries after which additional calls to onError
      * will throw the most recently seen error code. Valid parameter values are
      * ``[-1, INT_MAX]``. If set to -1, will disable the retry limit.
      * Parameter: (Int) number of times to retry
