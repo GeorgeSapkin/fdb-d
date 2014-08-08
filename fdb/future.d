@@ -126,18 +126,18 @@ alias FutureCallback(V) = void delegate(Exception ex, V value);
 
 shared class FDBFutureBase(C, V) : FutureBase!V
 {
-    private alias SF = shared FDBFutureBase!(C, V);
-    private alias SH = shared FutureHandle;
-    private alias SE = shared fdb_error_t;
+    private alias SF    = shared FDBFutureBase!(C, V);
+    private alias SFH   = shared FutureHandle;
+    private alias SE    = shared fdb_error_t;
 
-    private FutureHandle        future;
+    private FutureHandle        fh;
     private const Transaction   tr;
     private C                   callbackFunc;
 
-    this(FutureHandle future, const Transaction tr)
+    this(FutureHandle fh, const Transaction tr)
     {
-        this.future = cast(shared)future;
-        this.tr     = cast(shared)tr;
+        this.fh = cast(shared)fh;
+        this.tr = cast(shared)tr;
     }
 
     ~this()
@@ -147,11 +147,11 @@ shared class FDBFutureBase(C, V) : FutureBase!V
 
     void destroy()
     {
-        if (future)
+        if (fh)
         {
             // NB : Also releases the memory returned by get functions
-            fdb_future_destroy(cast(FutureHandle)future);
-            future = null;
+            fdb_future_destroy(cast(FutureHandle)fh);
+            fh = null;
         }
     }
 
@@ -159,7 +159,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
     {
         this.callbackFunc = cast(shared)callbackFunc;
         const auto err = fdb_future_set_callback(
-            cast(FutureHandle) future,
+            cast(FutureHandle) fh,
             cast(FDBCallback)  &futureReady,
             cast(void*)        this);
         enforceError(err);
@@ -172,7 +172,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         if (callbackFunc)
             start(callbackFunc);
 
-        shared err = fdb_future_block_until_ready(cast(FutureHandle)future);
+        shared err = fdb_future_block_until_ready(cast(FutureHandle)fh);
         if (err != FDBError.NONE)
         {
             _exception = cast(shared)err.toException;
@@ -180,7 +180,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         }
 
         static if (!is(V == void))
-            _value  = cast(shared)extractValue(future, err);
+            _value  = cast(shared)extractValue(fh, err);
 
         _exception  = cast(shared)err.toException;
 
@@ -192,7 +192,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         return wait(null);
     }
 
-    extern(C) static void futureReady(SH f, SF thiz)
+    extern(C) static void futureReady(SFH f, SF thiz)
     {
         thread_attachThis;
         auto futureTask = task!worker(f, thiz);
@@ -200,7 +200,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         taskPool.put(futureTask);
     }
 
-    static void worker(SH f, SF thiz)
+    static void worker(SFH f, SF thiz)
     {
         scope (exit) delete thiz;
 
@@ -222,14 +222,14 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         }
     }
 
-    abstract V extractValue(SH future, out SE err);
+    abstract V extractValue(SFH fh, out SE err);
 }
 
 private mixin template FutureCtor(C)
 {
-    this(FutureHandle future, const Transaction tr = null)
+    this(FutureHandle fh, const Transaction tr = null)
     {
-        super(future, tr);
+        super(fh, tr);
     }
 }
 
@@ -241,14 +241,14 @@ shared class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
 
     private alias PValue = ubyte *;
 
-    override Value extractValue(SH future, out SE err)
+    override Value extractValue(SFH fh, out SE err)
     {
         PValue value;
         int    valueLength,
                valuePresent;
 
         err = fdb_future_get_value(
-            cast(FutureHandle)future,
+            cast(FutureHandle)fh,
             &valuePresent,
             &value,
             &valueLength);
@@ -266,13 +266,13 @@ shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
 
     private alias PKey = ubyte *;
 
-    override Value extractValue(SH future, out SE err)
+    override Value extractValue(SFH fh, out SE err)
     {
         PKey key;
         int  keyLength;
 
         err = fdb_future_get_key(
-            cast(FutureHandle)future,
+            cast(FutureHandle)fh,
             &key,
             &keyLength);
         if (err != FDBError.NONE)
@@ -287,10 +287,10 @@ shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 {
     mixin FutureCtor!VoidFutureCallback;
 
-    override void extractValue(SH future, out SE err)
+    override void extractValue(SFH fh, out SE err)
     {
         err = fdb_future_get_error(
-            cast(FutureHandle)future);
+            cast(FutureHandle)fh);
     }
 }
 
@@ -305,14 +305,14 @@ shared class KeyValueFuture
 {
     const RangeInfo info;
 
-    this(FutureHandle future, const Transaction tr, RangeInfo info)
+    this(FutureHandle fh, const Transaction tr, RangeInfo info)
     {
-        super(future, tr);
+        super(fh, tr);
 
         this.info = cast(shared)info;
     }
 
-    override RecordRange extractValue(SH future, out SE err)
+    override RecordRange extractValue(SFH fh, out SE err)
     {
         FDBKeyValue * kvs;
         int len;
@@ -320,7 +320,7 @@ shared class KeyValueFuture
         // been transmited
         fdb_bool_t more;
         err = fdb_future_get_keyvalue_array(
-            cast(FutureHandle)future,
+            cast(FutureHandle)fh,
             &kvs,
             &len,
             &more);
@@ -391,11 +391,11 @@ shared class VersionFuture : FDBFutureBase!(VersionFutureCallback, ulong)
 {
     mixin FutureCtor!VersionFutureCallback;
 
-    override ulong extractValue(SH future, out SE err)
+    override ulong extractValue(SFH fh, out SE err)
     {
         long ver;
         err = fdb_future_get_version(
-            cast(FutureHandle)future,
+            cast(FutureHandle)fh,
             &ver);
         if (err != FDBError.NONE)
             return typeof(return).init;
@@ -409,12 +409,12 @@ shared class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
 {
     mixin FutureCtor!StringFutureCallback;
 
-    override string[] extractValue(SH future, out SE err)
+    override string[] extractValue(SFH fh, out SE err)
     {
         char ** stringArr;
         int     count;
         err = fdb_future_get_string_array(
-            cast(FutureHandle)future,
+            cast(FutureHandle)fh,
             &stringArr,
             &count);
         if (err != FDBError.NONE)
@@ -435,8 +435,8 @@ shared class WatchFuture : VoidFuture
 
     void cancel()
     {
-        if (future)
-            fdb_future_cancel(cast(FutureHandle)future);
+        if (fh)
+            fdb_future_cancel(cast(FutureHandle)fh);
     }
 }
 
