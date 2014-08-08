@@ -13,11 +13,11 @@ import
 
 class Cluster
 {
-    private const ClusterHandle cluster;
+    private const ClusterHandle ch;
 
-    this(const ClusterHandle cluster)
+    this(const ClusterHandle ch)
     {
-        this.cluster = cluster;
+        this.ch = ch;
     }
 
     ~this()
@@ -27,13 +27,13 @@ class Cluster
 
     void destroy()
     {
-        fdb_cluster_destroy(cluster);
+        fdb_cluster_destroy(ch);
     }
 
     auto openDatabase(const string dbName = "DB")
     {
         auto f = fdb_cluster_create_database(
-            cluster,
+            ch,
             dbName.toStringz(),
             cast(int)dbName.length);
         scope auto _future = createFuture!VoidFuture(f); 
