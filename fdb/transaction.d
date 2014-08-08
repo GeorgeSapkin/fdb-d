@@ -48,9 +48,9 @@ class Transaction
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
         {
-            auto f = fdb_transaction_commit(tr);
-            auto _future = startOrCreateFuture!VoidFuture(f, this, callback);
-            return _future;
+            auto fh = fdb_transaction_commit(tr);
+            auto future = startOrCreateFuture!VoidFuture(fh, this, callback);
+            return future;
         }
     }
 
@@ -96,7 +96,7 @@ class Transaction
         KeyFutureCallback   callback = null) const
     {
 
-        auto f = fdb_transaction_get_key(
+        auto fh = fdb_transaction_get_key(
             tr,
             &selector.key[0],
             cast(int)selector.key.length,
@@ -104,8 +104,8 @@ class Transaction
             selector.offset,
             cast(fdb_bool_t)snapshot);
 
-        auto _future = startOrCreateFuture!KeyFuture(f, this, callback);
-        return _future;
+        auto future = startOrCreateFuture!KeyFuture(fh, this, callback);
+        return future;
     }
 
     auto get(
@@ -114,21 +114,21 @@ class Transaction
         ValueFutureCallback callback = null) const
     {
 
-        auto f = fdb_transaction_get(
+        auto fh = fdb_transaction_get(
             tr,
             &key[0],
             cast(int)key.length,
             snapshot);
 
-        auto _future = startOrCreateFuture!ValueFuture(f, this, callback);
-        return _future;
+        auto future = startOrCreateFuture!ValueFuture(fh, this, callback);
+        return future;
     }
 
     auto getRange(
         RangeInfo               info,
         KeyValueFutureCallback  callback = null) const
     {
-        auto f = fdb_transaction_get_range(
+        auto fh = fdb_transaction_get_range(
             tr,
 
             &info.start.key[0],
@@ -148,9 +148,9 @@ class Transaction
             info.snapshot,
             info.reverse);
 
-        auto _future = startOrCreateFuture!KeyValueFuture(
-            f, this, info, callback);
-        return _future;
+        auto future = startOrCreateFuture!KeyValueFuture(
+            fh, this, info, callback);
+        return future;
     }
 
     auto getRange(
@@ -201,12 +201,12 @@ class Transaction
 
     auto watch(const Key key, VoidFutureCallback callback = null) const
     {
-        auto f = fdb_transaction_watch(
+        auto fh = fdb_transaction_watch(
             tr,
             &key[0],
             cast(int)key.length);
-        auto _future = startOrCreateFuture!WatchFuture(f, this, callback);
-        return _future;
+        auto future = startOrCreateFuture!WatchFuture(fh, this, callback);
+        return future;
     }
 
     private void addConflictRange(
@@ -238,9 +238,9 @@ class Transaction
         const FDBException  ex,
         VoidFutureCallback  callback = null) const
     {
-        auto f = fdb_transaction_on_error(tr, ex.err);
-        auto _future = startOrCreateFuture!VoidFuture(f, this, callback);
-        return _future;
+        auto fh = fdb_transaction_on_error(tr, ex.err);
+        auto future = startOrCreateFuture!VoidFuture(fh, this, callback);
+        return future;
     }
 
     void setReadVersion(const int ver) const
@@ -250,9 +250,9 @@ class Transaction
 
     auto getReadVersion(VersionFutureCallback callback = null) const
     {
-        auto f = fdb_transaction_get_read_version(tr);
-        auto _future = startOrCreateFuture!VersionFuture(f, this, callback);
-        return _future;
+        auto fh = fdb_transaction_get_read_version(tr);
+        auto future = startOrCreateFuture!VersionFuture(fh, this, callback);
+        return future;
     }
 
     auto getCommittedVersion() const
@@ -266,13 +266,13 @@ class Transaction
         const Key               key,
         StringFutureCallback    callback = null) const
     {
-        auto f = fdb_transaction_get_addresses_for_key(
+        auto fh = fdb_transaction_get_addresses_for_key(
             tr,
             &key[0],
             cast(int)key.length);
 
-        auto _future = startOrCreateFuture!StringFuture(f, this, callback);
-        return _future;
+        auto future = startOrCreateFuture!StringFuture(fh, this, callback);
+        return future;
     }
 
     /* Performs an addition of little-endian integers. If the existing value
