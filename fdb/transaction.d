@@ -15,12 +15,12 @@ import
 class Transaction
 {
     private const Database          db;
-    private const TransactionHandle tr;
+    private const TransactionHandle th;
 
-    this(const Database db, const TransactionHandle tr)
+    this(const Database db, const TransactionHandle th)
     {
         this.db = db;
-        this.tr = tr;
+        this.th = th;
     }
 
     ~this()
@@ -30,13 +30,13 @@ class Transaction
 
     void destroy()
     {
-        fdb_transaction_destroy(tr);
+        fdb_transaction_destroy(th);
     }
 
     void set(const Key key, const Value value) const
     {
         fdb_transaction_set(
-            tr,
+            th,
             &key[0],
             cast(int)key.length,
             &value[0],
@@ -48,7 +48,7 @@ class Transaction
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
         {
-            auto fh = fdb_transaction_commit(tr);
+            auto fh = fdb_transaction_commit(th);
             auto future = startOrCreateFuture!VoidFuture(fh, this, callback);
             return future;
         }
@@ -59,7 +59,7 @@ class Transaction
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
         {
-            fdb_transaction_cancel(tr);
+            fdb_transaction_cancel(th);
         }
     }
 
@@ -71,19 +71,19 @@ class Transaction
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
         {
-            fdb_transaction_reset(tr);
+            fdb_transaction_reset(th);
         }
     }
 
     void clear(const Key key) const
     {
-        fdb_transaction_clear(tr, &key[0], cast(int)key.length);
+        fdb_transaction_clear(th, &key[0], cast(int)key.length);
     }
 
     void clearRange(const Key begin, const Key end) const
     {
         fdb_transaction_clear_range(
-            tr,
+            th,
             &begin[0],
             cast(int)begin.length,
             &end[0],
@@ -97,7 +97,7 @@ class Transaction
     {
 
         auto fh = fdb_transaction_get_key(
-            tr,
+            th,
             &selector.key[0],
             cast(int)selector.key.length,
             cast(fdb_bool_t)selector.orEqual,
@@ -115,7 +115,7 @@ class Transaction
     {
 
         auto fh = fdb_transaction_get(
-            tr,
+            th,
             &key[0],
             cast(int)key.length,
             snapshot);
@@ -129,7 +129,7 @@ class Transaction
         KeyValueFutureCallback  callback = null) const
     {
         auto fh = fdb_transaction_get_range(
-            tr,
+            th,
 
             &info.start.key[0],
             cast(int)info.start.key.length,
@@ -202,7 +202,7 @@ class Transaction
     auto watch(const Key key, VoidFutureCallback callback = null) const
     {
         auto fh = fdb_transaction_watch(
-            tr,
+            th,
             &key[0],
             cast(int)key.length);
         auto future = startOrCreateFuture!WatchFuture(fh, this, callback);
@@ -215,7 +215,7 @@ class Transaction
         const ConflictRangeType type) const
     {
         auto err = fdb_transaction_add_conflict_range(
-            tr,
+            th,
             &start[0],
             cast(int)start.length,
             &end[0],
@@ -238,19 +238,19 @@ class Transaction
         const FDBException  ex,
         VoidFutureCallback  callback = null) const
     {
-        auto fh = fdb_transaction_on_error(tr, ex.err);
+        auto fh = fdb_transaction_on_error(th, ex.err);
         auto future = startOrCreateFuture!VoidFuture(fh, this, callback);
         return future;
     }
 
     void setReadVersion(const int ver) const
     {
-        fdb_transaction_set_read_version(tr, ver);
+        fdb_transaction_set_read_version(th, ver);
     }
 
     auto getReadVersion(VersionFutureCallback callback = null) const
     {
-        auto fh = fdb_transaction_get_read_version(tr);
+        auto fh = fdb_transaction_get_read_version(th);
         auto future = startOrCreateFuture!VersionFuture(fh, this, callback);
         return future;
     }
@@ -258,7 +258,7 @@ class Transaction
     auto getCommittedVersion() const
     {
         long ver;
-        enforceError(fdb_transaction_get_committed_version(tr, &ver));
+        enforceError(fdb_transaction_get_committed_version(th, &ver));
         return ver;
     }
 
@@ -267,7 +267,7 @@ class Transaction
         StringFutureCallback    callback = null) const
     {
         auto fh = fdb_transaction_get_addresses_for_key(
-            tr,
+            th,
             &key[0],
             cast(int)key.length);
 
@@ -341,7 +341,7 @@ class Transaction
     {
 
         fdb_transaction_atomic_op(
-            tr,
+            th,
             &key[0],
             cast(int)key.length,
             &value[0],
@@ -506,7 +506,7 @@ class Transaction
 
     private void setTransactionOption(const TransactionOption op) const
     {
-        enforceError(fdb_transaction_set_option(tr, op, null, 0));
+        enforceError(fdb_transaction_set_option(th, op, null, 0));
     }
 
     private void setTransactionOption(
@@ -514,7 +514,7 @@ class Transaction
         const long              value) const
     {
         auto err = fdb_transaction_set_option(
-            tr,
+            th,
             op,
             cast(immutable(char)*)&value,
             cast(int)value.sizeof);
