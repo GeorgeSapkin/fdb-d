@@ -13,9 +13,9 @@ import
 
 class Cluster
 {
-    private const ClusterHandle ch;
+    private ClusterHandle ch;
 
-    this(const ClusterHandle ch)
+    this(ClusterHandle ch)
     {
         this.ch = ch;
     }
@@ -27,7 +27,11 @@ class Cluster
 
     void destroy()
     {
-        fdb_cluster_destroy(ch);
+        if (ch)
+        {
+            fdb_cluster_destroy(ch);
+            ch = null;
+        }
     }
 
     auto openDatabase(const string dbName = "DB")
