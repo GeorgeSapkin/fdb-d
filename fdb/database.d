@@ -16,12 +16,12 @@ import
 class Database
 {
     private const Cluster        cluster;
-    private const DatabaseHandle db;
+    private const DatabaseHandle dbh;
 
-    this(const Cluster cluster, const DatabaseHandle db)
+    this(const Cluster cluster, const DatabaseHandle dbh)
     {
-        this.cluster = cluster;
-        this.db      = db;
+        this.cluster    = cluster;
+        this.dbh        = dbh;
     }
 
     ~this()
@@ -31,13 +31,13 @@ class Database
 
     void destroy() const
     {
-        fdb_database_destroy(db);
+        fdb_database_destroy(dbh);
     }
 
     auto createTransaction() const
     {
         TransactionHandle tr;
-        enforceError(fdb_database_create_transaction(db, &tr));
+        enforceError(fdb_database_create_transaction(dbh, &tr));
         return new Transaction(this, tr);
     }
 
@@ -91,7 +91,7 @@ class Database
         const long              value) const
     {
         const auto err = fdb_database_set_option(
-            db,
+            dbh,
             op,
             cast(immutable(char)*)&value,
             cast(int)value.sizeof);
@@ -103,7 +103,7 @@ class Database
         const string            value) const
     {
         const auto err = fdb_database_set_option(
-            db,
+            dbh,
             op,
             value.toStringz,
             cast(int)value.length);
