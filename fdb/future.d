@@ -227,7 +227,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
     abstract V extractValue(SFH fh, out SE err);
 }
 
-private mixin template FutureCtor(C)
+private mixin template FDBFutureCtor()
 {
     this(FutureHandle fh, const Transaction tr = null)
     {
@@ -239,7 +239,7 @@ alias ValueFutureCallback = FutureCallback!Value;
 
 shared class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
 {
-    mixin FutureCtor!ValueFutureCallback;
+    mixin FDBFutureCtor;
 
     private alias PValue = ubyte *;
 
@@ -264,7 +264,7 @@ alias KeyFutureCallback = FutureCallback!Key;
 
 shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
 {
-    mixin FutureCtor!KeyFutureCallback;
+    mixin FDBFutureCtor;
 
     private alias PKey = ubyte *;
 
@@ -287,7 +287,7 @@ alias VoidFutureCallback = void delegate(Exception ex);
 
 shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 {
-    mixin FutureCtor!VoidFutureCallback;
+    mixin FDBFutureCtor;
 
     override void extractValue(SFH fh, out SE err)
     {
@@ -390,7 +390,7 @@ alias VersionFutureCallback = FutureCallback!ulong;
 
 shared class VersionFuture : FDBFutureBase!(VersionFutureCallback, ulong)
 {
-    mixin FutureCtor!VersionFutureCallback;
+    mixin FDBFutureCtor;
 
     override ulong extractValue(SFH fh, out SE err)
     {
@@ -408,7 +408,7 @@ alias StringFutureCallback = FutureCallback!(string[]);
 
 shared class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
 {
-    mixin FutureCtor!StringFutureCallback;
+    mixin FDBFutureCtor;
 
     override string[] extractValue(SFH fh, out SE err)
     {
@@ -427,7 +427,7 @@ shared class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
 
 shared class WatchFuture : VoidFuture
 {
-    mixin FutureCtor!VoidFutureCallback;
+    mixin FDBFutureCtor;
 
     ~this()
     {
