@@ -268,7 +268,7 @@ shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
 
     private alias PKey = ubyte *;
 
-    override Value extractValue(SFH fh, out SE err)
+    override Key extractValue(SFH fh, out SE err)
     {
         PKey key;
         int  keyLength;
