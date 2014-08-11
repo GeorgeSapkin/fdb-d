@@ -28,7 +28,7 @@ shared class FutureBase(V)
 
     protected Exception exception;
 
-    abstract shared V await();
+    abstract shared(V) await();
 }
 
 shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
@@ -57,7 +57,7 @@ shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
         (cast(Semaphore)futureSemaphore).notify;
     }
 
-    override shared V await()
+    override shared(V) await()
     {
         (cast(Semaphore)futureSemaphore).wait;
 
@@ -108,7 +108,7 @@ shared class BasicFuture(V) : FutureBase!V
         }
     }
 
-    override shared V await()
+    override shared(V) await()
     {
         (cast(Semaphore)futureSemaphore).wait;
         enforce(exception is null, cast(Exception)exception);
@@ -162,7 +162,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
         return this;
     }
 
-    shared V await(C callbackFunc)
+    shared(V) await(C callbackFunc)
     {
         if (callbackFunc)
             start(callbackFunc);
@@ -181,13 +181,11 @@ shared class FDBFutureBase(C, V) : FutureBase!V
 
         enforce(exception is null, cast(Exception)exception);
         static if (!is(V == void))
-            return cast(V)value;
+            return value;
     }
 
-    override shared V await()
+    override shared(V) await()
     {
-        import std.stdio;
-
         static if (!is(V == void))
             return await(null);
         else
