@@ -79,38 +79,36 @@ shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
     }
 }
 
-shared class BasicFuture(V) : FutureBase!V
+class BasicFuture(V)
 {
-    private Semaphore futureSemaphore;
+    private Exception   exception;
+    private Semaphore   event;
+
+    static if (!is(V == void))
+        private V       value;
 
     this()
     {
-        futureSemaphore = cast(shared)new Semaphore;
+        event = new Semaphore;
     }
 
     static if (!is(V == void))
-    {
-        void notify(Exception ex, ref V value)
+        void notify(Exception ex, ref V val)
         {
-            exception  = cast(shared)ex;
-            value      = cast(shared)value;
-
-            (cast(Semaphore)futureSemaphore).notify;
+            exception   = ex;
+            value       = val;
+            event.notify;
         }
-    }
     else
-    {
         void notify(Exception ex)
         {
-            exception  = cast(shared)ex;
-
-            (cast(Semaphore)futureSemaphore).notify;
+            exception   = ex;
+            event.notify;
         }
-    }
 
-    override shared(V) await()
+    V await()
     {
-        (cast(Semaphore)futureSemaphore).wait;
+        event.wait;
         enforce(exception is null, cast(Exception)exception);
         static if (!is(V == void))
             return value;
@@ -441,7 +439,7 @@ shared class WatchFuture : VoidFuture
 
 auto createFuture(T)()
 {
-    auto future = new shared BasicFuture!T;
+    auto future = new BasicFuture!T;
     return future;
 }
 
