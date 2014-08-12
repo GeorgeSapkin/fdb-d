@@ -2,7 +2,9 @@ module fdb.future;
 
 import
     core.sync.semaphore,
-    core.thread,
+    core.thread;
+
+import
     std.algorithm,
     std.array,
     std.conv,
