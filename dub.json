@@ -1,0 +1,7 @@
+{
+	"name" : "fdb-d",
+	"description" : "FDB D wrapper",
+	"libs" : ["fdb_c"],
+	"dependencies" : {
+	}
+}
