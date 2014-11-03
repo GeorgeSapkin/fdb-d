@@ -317,7 +317,7 @@ shared class KeyValueFuture
         FDBKeyValue * kvs;
         int len;
         // Receives true if there are more result, or false if all results have
-        // been transmited
+        // been transmitted
         fdb_bool_t more;
         err = fdb_future_get_keyvalue_array(
             cast(FutureHandle)fh,
