@@ -11,4 +11,4 @@ It has been ripped out of a working project so it's missing unit testing and sam
 
 This has only been used/tested on Fedora 20/21 x64 and Ubuntu 14.04 x64.
 
-More about FoundationDB check out it's official website: [https://foundationdb.com/](https://foundationdb.com/)
+For more information about FoundationDB check out it's official website: [https://foundationdb.com/](https://foundationdb.com/)
