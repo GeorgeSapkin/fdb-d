@@ -2,7 +2,7 @@
 	"name":         "fdb-d",
 	"description":  "FoundationDB D API",
 	"authors":     ["George Sapkin"],
-	"license":     ["MIT"],
+	"license":      "MIT",
 	"libs":        ["fdb_c"],
 	"dependencies" : {
 	}
