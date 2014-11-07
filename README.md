@@ -1,6 +1,6 @@
-# FDB D wrapper #
+# FoundationDB D API #
 
 ### Requirements ###
 
-* FDB [clients](https://foundationdb.com/get) installed
+* FoundationDB [clients](https://foundationdb.com/get) installed
 * `dmd` and `dub` to build
