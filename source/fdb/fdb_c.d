@@ -256,7 +256,7 @@ fdb_error_t     fdb_transaction_add_conflict_range(
     const ConflictRangeType     type);
 
 fdb_error_t     fdb_select_api_version_impl(
-    int                 runtime_version,
-    int                 header_version);
+    int                         runtime_version,
+    int                         header_version);
 
 int             fdb_get_max_api_version();
