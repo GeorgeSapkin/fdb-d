@@ -3,6 +3,7 @@
 	"description":  "FoundationDB D API",
 	"authors":     ["George Sapkin"],
 	"license":      "MIT",
+	"targetType":   "library",
 	"libs":        ["fdb_c"],
 	"dependencies" : {
 	}
