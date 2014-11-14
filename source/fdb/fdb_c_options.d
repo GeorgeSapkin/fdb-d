@@ -3,26 +3,26 @@ module fdb.fdb_c_options;
 enum NetworkOption : uint
 {
     // deprecated
-    NONE				= 0,
+    NONE              = 0,
 
     // deprecated
-    LOCAL_ADDRESS        = 10,
+    LOCAL_ADDRESS     = 10,
 
     // deprecated
-    CLUSTER_FILE         = 20,
+    CLUSTER_FILE      = 20,
 
     /**
      * Enables trace output to a file in a directory of the clients choosing
      * Parameter: (String) path to output directory (or NULL for current working
      * directory)
      */
-    TRACE_ENABLE        = 30,
+    TRACE_ENABLE      = 30,
 
     /**
      * Set internal tuning or debugging knobs
      * Parameter: (String) knob_name=knob_value
      */
-    KNOB                = 40,
+    KNOB              = 40,
 
     /**
      * Set the TLS plugin to load. This option, if used, must be set before any
@@ -47,7 +47,7 @@ enum NetworkOption : uint
      * Set the private key corresponding to your own certificate
      * Parameter: (Bytes) key
      */
-    TLS_KEY_BYTES       = 45,
+    TLS_KEY_BYTES     = 45,
 
     /**
      * Set the file from which to load the private key corresponding to your own
