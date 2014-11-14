@@ -42,16 +42,16 @@ fdb_error_t     fdb_select_api_version(int runtime_version)
 extern (C):
 
 alias FDBCallback = void function(
-    FDBFuture *         future,
-    void *              callback_parameter);
+    FDBFuture *                 future,
+    void *                      callback_parameter);
 
 char *          fdb_get_error(
-    fdb_error_t code);
+    fdb_error_t                 code);
 
 fdb_error_t     fdb_network_set_option(
-    const NetworkOption option,
-    immutable char *    value,
-    int                 value_length);
+    const NetworkOption         option,
+    immutable char *            value,
+    int                         value_length);
 
 fdb_error_t     fdb_setup_network();
 
