@@ -60,6 +60,10 @@ void stopNetwork()
 }
 
 auto createCluster(const string clusterFilePath = null)
+in
+{
+    assert(networkStarted);
+}
 out (result)
 {
     assert(result !is null);
