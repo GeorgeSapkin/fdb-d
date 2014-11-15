@@ -45,6 +45,11 @@ class Database
     }
 
     auto createTransaction() const
+    out (result)
+    {
+        assert(result !is null);
+    }
+    body
     {
         TransactionHandle th;
         fdb_database_create_transaction(dbh, &th).enforceError;

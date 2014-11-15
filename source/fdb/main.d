@@ -60,6 +60,11 @@ void stopNetwork()
 }
 
 auto createCluster(const string clusterFilePath = null)
+out (result)
+{
+    assert(result !is null);
+}
+body
 {
     auto fh = fdb_create_cluster(clusterFilePath.toStringz);
     scope auto future = createFuture!VoidFuture(fh);

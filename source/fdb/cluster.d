@@ -40,6 +40,11 @@ class Cluster
     }
 
     auto openDatabase(const string dbName = "DB")
+    out (result)
+    {
+        assert(result !is null);
+    }
+    body
     {
         auto fh = fdb_cluster_create_database(
             ch,
