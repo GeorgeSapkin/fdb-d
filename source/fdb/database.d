@@ -26,8 +26,8 @@ class Database
     }
     body
     {
-        this.cluster    = cluster;
-        this.dbh        = dbh;
+        this.cluster = cluster;
+        this.dbh     = dbh;
     }
 
     ~this()
@@ -97,8 +97,8 @@ class Database
     }
 
     private void setDatabaseOption(
-        const DatabaseOption    op,
-        const long              value) const
+        const DatabaseOption op,
+        const long           value) const
     {
         const auto err = fdb_database_set_option(
             dbh,
@@ -109,8 +109,8 @@ class Database
     }
 
     private void setDatabaseOption(
-        const DatabaseOption    op,
-        const string            value) const
+        const DatabaseOption op,
+        const string         value) const
     {
         const auto err = fdb_database_set_option(
             dbh,
@@ -134,10 +134,10 @@ auto doTransaction(
 };
 
 void doTransactionWorker(
-    Transaction         tr,
-    WorkFunc            func,
-    VoidFutureCallback  commitCallback,
-    CompletionCallback  futureCompletionCallback)
+    Transaction        tr,
+    WorkFunc           func,
+    VoidFutureCallback commitCallback,
+    CompletionCallback futureCompletionCallback)
 {
     retryLoop(tr, func, (ex)
     {
