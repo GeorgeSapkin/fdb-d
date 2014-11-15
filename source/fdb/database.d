@@ -19,6 +19,12 @@ class Database
     private DatabaseHandle  dbh;
 
     this(const Cluster cluster, DatabaseHandle dbh)
+    in
+    {
+        enforce(cluster !is null, "cluster must be set");
+        enforce(dbh !is null, "dbh must be set");
+    }
+    body
     {
         this.cluster    = cluster;
         this.dbh        = dbh;

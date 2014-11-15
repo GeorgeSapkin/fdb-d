@@ -18,6 +18,12 @@ class Transaction
     private TransactionHandle   th;
 
     this(const Database db, TransactionHandle th)
+    in
+    {
+        enforce(db !is null, "db must be set");
+        enforce(th !is null, "th must be set");
+    }
+    body
     {
         this.db = db;
         this.th = th;

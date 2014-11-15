@@ -16,6 +16,11 @@ class Cluster
     private ClusterHandle ch;
 
     this(ClusterHandle ch)
+    in
+    {
+        enforce(ch !is null, "ch must be set");
+    }
+    body
     {
         this.ch = ch;
     }
