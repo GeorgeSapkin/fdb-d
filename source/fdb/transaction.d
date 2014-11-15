@@ -14,8 +14,14 @@ import
 
 class Transaction
 {
-    private const Database      db;
-    private TransactionHandle   th;
+    private const Database    db;
+    private TransactionHandle th;
+
+    invariant()
+    {
+        assert(db !is null);
+        assert(th !is null);
+    }
 
     this(const Database db, TransactionHandle th)
     in

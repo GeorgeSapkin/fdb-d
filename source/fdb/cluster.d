@@ -15,6 +15,11 @@ class Cluster
 {
     private ClusterHandle ch;
 
+    invariant()
+    {
+        assert(ch !is null);
+    }
+
     this(ClusterHandle ch)
     in
     {

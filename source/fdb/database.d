@@ -15,8 +15,14 @@ import
 
 class Database
 {
-    private const Cluster   cluster;
-    private DatabaseHandle  dbh;
+    private const Cluster  cluster;
+    private DatabaseHandle dbh;
+
+    invariant()
+    {
+        assert(cluster !is null);
+        assert(dbh !is null);
+    }
 
     this(const Cluster cluster, DatabaseHandle dbh)
     in
