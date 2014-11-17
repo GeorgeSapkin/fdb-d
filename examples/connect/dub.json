@@ -6,6 +6,6 @@
 	"license":      "MIT",
 	"targetType":   "executable",
 	"dependencies" : {
-		"fdb-d" : "~master"
+		"fdb-d": {"version": "~master", "path": "../../"}
 	}
 }
