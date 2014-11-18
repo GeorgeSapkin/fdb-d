@@ -52,6 +52,12 @@ void startNetwork()
 }
 
 void stopNetwork()
+in
+{
+    assert(networkStarted);
+    assert(networkTask !is null);
+}
+body
 {
     fdb_stop_network.enforceError;
     if (networkTask)
