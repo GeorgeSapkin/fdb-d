@@ -21,7 +21,6 @@ class Database
     invariant()
     {
         assert(cluster !is null);
-        assert(dbh !is null);
     }
 
     this(const Cluster cluster, DatabaseHandle dbh)
