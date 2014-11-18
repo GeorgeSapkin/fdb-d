@@ -20,7 +20,6 @@ class Transaction
     invariant()
     {
         assert(db !is null);
-        assert(th !is null);
     }
 
     this(const Database db, TransactionHandle th)
