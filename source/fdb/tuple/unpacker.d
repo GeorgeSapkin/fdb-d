@@ -4,7 +4,7 @@ import
     fdb.tuple.tupletype,
     fdb.tuple.var;
 
-auto unpack(const ubyte[] bytes)
+auto unpack(B)(B bytes)
 {
     ulong pos = 0;
     FDBTuple variants;

@@ -15,7 +15,7 @@ alias FDBTuple = FDBVariant[];
 struct FDBVariant
 {
 	const TupleType type;
-	const ubyte[] slice;
+	const shared ubyte[] slice;
 
 	@property auto size()
 	{
@@ -28,19 +28,19 @@ struct FDBVariant
 		}
 	}
 
-	auto static create(
+	auto static create(B)(
 		const TupleType type,
-		const ubyte[] slice) pure
+		B               slice) pure
 	{
 		if (type.isFDBIntegral)
 			enforce(type.FDBsizeof == slice.length);
 		return FDBVariant(type, slice);
 	}
 
-	auto static create(
+	auto static create(B)(
 		const TupleType type,
-		const ubyte[] buffer,
-		const ulong offset) pure
+		B               buffer,
+		const ulong     offset) pure
 	{
 		if (type.isFDBIntegral)
 		{
