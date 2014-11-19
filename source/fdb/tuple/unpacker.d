@@ -1,10 +1,14 @@
 module fdb.tuple.unpacker;
 
 import
+    std.range,
+    std.traits;
+
+import
     fdb.tuple.tupletype,
     fdb.tuple.var;
 
-auto unpack(B)(B bytes)
+auto unpack(Range)(Range bytes) if (isInputRange!(Unqual!Range))
 {
     ulong pos = 0;
     FDBTuple variants;

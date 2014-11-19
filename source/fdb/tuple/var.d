@@ -3,6 +3,7 @@ module fdb.tuple.var;
 import
 	std.conv,
 	std.exception,
+	std.range,
 	std.string,
 	std.traits,
 	std.typecons;
@@ -28,19 +29,21 @@ struct FDBVariant
 		}
 	}
 
-	auto static create(B)(
+	auto static create(Range)(
 		const TupleType type,
-		B               slice) pure
+		Range           slice) pure
+		if (isInputRange!(Unqual!Range))
 	{
 		if (type.isFDBIntegral)
 			enforce(type.FDBsizeof == slice.length);
 		return FDBVariant(type, slice);
 	}
 
-	auto static create(B)(
+	auto static create(Range)(
 		const TupleType type,
-		B               buffer,
+		Range           buffer,
 		const ulong     offset) pure
+		if (isInputRange!(Unqual!Range))
 	{
 		if (type.isFDBIntegral)
 		{
