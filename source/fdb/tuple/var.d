@@ -49,9 +49,11 @@ struct FDBVariant
         {
             auto size = type.FDBsizeof;
             enforce(offset + size <= buffer.length);
-            return FDBVariant(type, buffer[offset .. offset + size]);
+            return FDBVariant(
+                type,
+                cast(shared)buffer[offset .. offset + size]);
         }
-        return FDBVariant(type, buffer[offset .. $]);
+        return FDBVariant(type, cast(shared)buffer[offset .. $]);
     }
 
     auto isTypeOf(T)() const
