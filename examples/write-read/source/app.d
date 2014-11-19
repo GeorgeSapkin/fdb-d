@@ -24,10 +24,7 @@ void main()
     }
     catch (FDBException ex)
     {
-        ex.writeln;
-        "Stopping network".writeln;
-        stopNetwork;
-        exit(1);
+        ex.handleException;
     }
 
     auto key = "SomeKey".pack;
@@ -43,10 +40,7 @@ void main()
     }
     catch (FDBException ex)
     {
-        ex.writeln;
-        "Stopping network".writeln;
-        stopNetwork;
-        exit(1);
+        ex.handleException;
     }
 
     try
@@ -68,12 +62,17 @@ void main()
     }
     catch (FDBException ex)
     {
-        ex.writeln;
-        "Stopping network".writeln;
-        stopNetwork;
-        exit(1);
+        ex.handleException;
     }
 
     "Stopping network".writeln;
     stopNetwork;
+}
+
+void handleException(E)(E ex)
+{
+    ex.writeln;
+    "Stopping network".writeln;
+    stopNetwork;
+    exit(1);
 }
