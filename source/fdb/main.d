@@ -17,7 +17,9 @@ import
     fdb.networkoptions;
 
 private shared auto networkStarted = false;
-private Task!(networkThread) * networkTask;
+
+private alias NetworkTask = Task!(networkThread)*;
+private shared NetworkTask networkTask;
 
 private auto FBD_RUNTIME_API_VERSION = 200;
 
@@ -40,8 +42,9 @@ private void runNetwork()
 {
     NetworkOptions.init;
     fdb_setup_network.enforceError;
-    networkTask = task!networkThread;
-    networkTask.executeInNewThread;
+    auto localTask = task!networkThread;
+    localTask.executeInNewThread;
+    networkTask = cast(shared)localTask;
 }
 
 void startNetwork()
@@ -61,7 +64,10 @@ body
 {
     fdb_stop_network.enforceError;
     if (networkTask)
-        networkTask.yieldForce.enforceError;
+    {
+        auto localTask = cast(NetworkTask)networkTask;
+        localTask.yieldForce.enforceError;
+    }
     networkStarted = false;
 }
 
