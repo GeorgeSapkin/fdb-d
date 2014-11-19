@@ -33,9 +33,13 @@ struct FDBVariant
         const TupleType type,
         Range           slice) pure
         if (isInputRange!(Unqual!Range))
+    in
     {
         if (type.isFDBIntegral)
             enforce(type.FDBsizeof == slice.length);
+    }
+    body
+    {
         return FDBVariant(type, slice);
     }
 
@@ -67,8 +71,12 @@ struct FDBVariant
     }
 
     auto get(T)() const
+    in
     {
         enforce(isTypeOf!T);
+    }
+    body
+    {
         static if (is(T == long))
             return getInt;
         else static if (is(T == string))
