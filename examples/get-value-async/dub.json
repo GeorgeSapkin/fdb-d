@@ -1,5 +1,5 @@
 {
-	"name":         "fdb-d-example-write-read-async",
+	"name":         "fdb-d-example-get-value-async",
 	"description":  "FoundationDB D API - Async getting value example",
 	"copyright":    "Copyright © 2014, George Sapkin",
 	"authors":     ["George Sapkin"],
