@@ -36,7 +36,7 @@ void main()
         "Setting SomeKey to SomeValue".writeln;
         auto value = "SomeValue".pack;
         tr.set(key, value);
-        tr.commit;
+        tr.commit.await;
     }
     catch (FDBException ex)
     {
@@ -58,7 +58,7 @@ void main()
             ("Got " ~ value).writeln;
         }
 
-        tr.commit;
+        tr.commit.await;
     }
     catch (FDBException ex)
     {
