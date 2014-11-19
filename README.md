@@ -1,5 +1,7 @@
 # FoundationDB D API #
 
+[![Build Status](https://api.travis-ci.org/GeorgeSapkin/fdb-d.png)](https://api.travis-ci.org/GeorgeSapkin/fdb-d)
+
 ### Requirements ###
 
 * FoundationDB [clients](https://foundationdb.com/get) installed
