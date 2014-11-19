@@ -1,4 +1,5 @@
 import
+    std.algorithm,
     std.array,
     std.c.stdlib,
     std.stdio;
@@ -59,12 +60,10 @@ void main()
                 auto keyVars = record.key.unpack;
                 if (!keyVars.empty)
                 {
-                    foreach (const keyVar; keyVars)
-                        if (keyVar.isTypeOf!string)
-                        {
-                            auto keyPart = keyVar.get!string;
-                            keyPart.write;
-                        }
+                    auto key = reduce!
+                        ((a, b) => b.isTypeOf!string ? a ~ b.get!string : a)
+                        ("", keyVars);
+                    key.write;
                 }
                 else
                     "no key".write;
@@ -73,12 +72,10 @@ void main()
                 auto valueVars = record.value.unpack;
                 if (!valueVars.empty)
                 {
-                    foreach (const valueVar; valueVars)
-                        if (valueVar.isTypeOf!string)
-                        {
-                            auto valuePart = valueVar.get!string;
-                            valuePart.write;
-                        }
+                    auto value = reduce!
+                        ((a, b) => b.isTypeOf!string ? a ~ b.get!string : a)
+                        ("", valueVars);
+                    value.write;
                 }
                 else
                     "no value".write;
