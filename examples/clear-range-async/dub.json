@@ -1,0 +1,11 @@
+{
+	"name":         "fdb-d-example-clear-range-async",
+	"description":  "FoundationDB D API - Async clear range example",
+	"copyright":    "Copyright © 2014, George Sapkin",
+	"authors":     ["George Sapkin"],
+	"license":      "MIT",
+	"targetType":   "executable",
+	"dependencies" : {
+		"fdb-d": {"version": "~master", "path": "../../"}
+	}
+}
