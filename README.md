@@ -1,6 +1,6 @@
 # FoundationDB D API #
 
-[![Build Status](https://api.travis-ci.org/GeorgeSapkin/fdb-d.png)](https://api.travis-ci.org/GeorgeSapkin/fdb-d)
+[![Build Status](https://api.travis-ci.org/GeorgeSapkin/fdb-d.png)](https://travis-ci.org/GeorgeSapkin/fdb-d)
 
 ### Requirements ###
 
