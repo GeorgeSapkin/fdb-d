@@ -1,6 +1,6 @@
 {
 	"name":         "fdb-d-example-write-read-async",
-	"description":  "FoundationDB D API - Async write/read example",
+	"description":  "FoundationDB D API - Async getting value example",
 	"copyright":    "Copyright © 2014, George Sapkin",
 	"authors":     ["George Sapkin"],
 	"license":      "MIT",

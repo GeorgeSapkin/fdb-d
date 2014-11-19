@@ -1,6 +1,6 @@
 {
-	"name":         "fdb-d-example-write-read",
-	"description":  "FoundationDB D API - Write/read example",
+	"name":         "fdb-d-example-get-value",
+	"description":  "FoundationDB D API - Getting value example",
 	"copyright":    "Copyright © 2014, George Sapkin",
 	"authors":     ["George Sapkin"],
 	"license":      "MIT",
