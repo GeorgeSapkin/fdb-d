@@ -73,6 +73,7 @@ body
     {
         auto localTask = cast(NetworkTask)networkTask;
         localTask.yieldForce.enforceError;
+        networkTask = null;
     }
     networkStarted = false;
 }
