@@ -167,6 +167,9 @@ class Transaction
         return future;
     }
 
+    /**
+     * Returns: Key-value pairs within [start, end) range
+     */
     auto getRange(
         Selector                start,
         Selector                end,
@@ -182,6 +185,7 @@ class Transaction
         return getRange(info, callback);
     }
 
+    /** ditto */
     auto getRange(
         const Key               start,
         const Key               end,
@@ -194,6 +198,26 @@ class Transaction
     {
         auto startSel = start.firstGreaterOrEqual;
         auto endSel   = end.firstGreaterOrEqual;
+        return getRange(
+            startSel, endSel, limit, mode, snapshot, reverse, iteration,
+            callback);
+    }
+
+    /**
+     * Returns: Key-value pairs within [start, end] range
+     */
+    auto getRangeInclusive(
+        const Key               start,
+        const Key               end,
+        const int               limit       = 0,
+        const StreamingMode     mode        = StreamingMode.ITERATOR,
+        const bool              snapshot    = false,
+        const bool              reverse     = false,
+        const int               iteration   = 1,
+        KeyValueFutureCallback  callback    = null) const
+    {
+        auto startSel = start.firstGreaterOrEqual;
+        auto endSel   = end.firstGreaterThan;
         return getRange(
             startSel, endSel, limit, mode, snapshot, reverse, iteration,
             callback);
