@@ -105,6 +105,13 @@ class Transaction
             cast(int)end.length);
     }
 
+    auto clearRangeStartsWith(const Key prefix) const
+    {
+        auto begin = prefix;
+        auto end   = prefix.getEndPrefix;
+        clearRange(begin, end);
+    }
+
     auto getKey(
         const Selector      selector,
         const bool          snapshot,
