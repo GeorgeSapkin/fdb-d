@@ -1,107 +1,107 @@
 module fdb.tuple.var;
 
 import
-	std.conv,
-	std.exception,
-	std.range,
-	std.string,
-	std.traits,
-	std.typecons;
+    std.conv,
+    std.exception,
+    std.range,
+    std.string,
+    std.traits,
+    std.typecons;
 
 import
-	fdb.tuple.tupletype;
+    fdb.tuple.tupletype;
 
 alias FDBTuple = FDBVariant[];
 
 struct FDBVariant
 {
-	const TupleType type;
-	const shared ubyte[] slice;
+    const TupleType type;
+    const shared ubyte[] slice;
 
-	@property auto size()
-	{
-		if (type.isFDBIntegral)
-			return type.FDBsizeof;
-		else
-		{
-			auto size = (cast(char[])slice).indexOf(0, 0);
-			return (size > 0) ? cast(ulong)size + 1 : 0;
-		}
-	}
+    @property auto size()
+    {
+        if (type.isFDBIntegral)
+            return type.FDBsizeof;
+        else
+        {
+            auto size = (cast(char[])slice).indexOf(0, 0);
+            return (size > 0) ? cast(ulong)size + 1 : 0;
+        }
+    }
 
-	auto static create(Range)(
-		const TupleType type,
-		Range           slice) pure
-		if (isInputRange!(Unqual!Range))
-	{
-		if (type.isFDBIntegral)
-			enforce(type.FDBsizeof == slice.length);
-		return FDBVariant(type, slice);
-	}
+    auto static create(Range)(
+        const TupleType type,
+        Range           slice) pure
+        if (isInputRange!(Unqual!Range))
+    {
+        if (type.isFDBIntegral)
+            enforce(type.FDBsizeof == slice.length);
+        return FDBVariant(type, slice);
+    }
 
-	auto static create(Range)(
-		const TupleType type,
-		Range           buffer,
-		const ulong     offset) pure
-		if (isInputRange!(Unqual!Range))
-	{
-		if (type.isFDBIntegral)
-		{
-			auto size = type.FDBsizeof;
-			enforce(offset + size <= buffer.length);
-			return FDBVariant(type, buffer[offset .. offset + size]);
-		}
-		return FDBVariant(type, buffer[offset .. $]);
-	}
+    auto static create(Range)(
+        const TupleType type,
+        Range           buffer,
+        const ulong     offset) pure
+        if (isInputRange!(Unqual!Range))
+    {
+        if (type.isFDBIntegral)
+        {
+            auto size = type.FDBsizeof;
+            enforce(offset + size <= buffer.length);
+            return FDBVariant(type, buffer[offset .. offset + size]);
+        }
+        return FDBVariant(type, buffer[offset .. $]);
+    }
 
-	auto isTypeOf(T)() const
-	{
-		static if (is(T == long))
-			return type.isFDBIntegral;
-		else static if (is(T == string))
-			return type == TupleType.Utf8 || type == TupleType.Bytes;
-		else
-			static assert(0, "Type " ~ T.to!string ~ " is not supported");
-	}
+    auto isTypeOf(T)() const
+    {
+        static if (is(T == long))
+            return type.isFDBIntegral;
+        else static if (is(T == string))
+            return type == TupleType.Utf8 || type == TupleType.Bytes;
+        else
+            static assert(0, "Type " ~ T.to!string ~ " is not supported");
+    }
 
-	auto get(T)() const
-	{
-		enforce(isTypeOf!T);
-		static if (is(T == long))
-			return getInt;
-		else static if (is(T == string))
-			return getStr;
-		else
-			static assert(0, "Type " ~ T.to!string ~ " is not supported");
-	}
+    auto get(T)() const
+    {
+        enforce(isTypeOf!T);
+        static if (is(T == long))
+            return getInt;
+        else static if (is(T == string))
+            return getStr;
+        else
+            static assert(0, "Type " ~ T.to!string ~ " is not supported");
+    }
 
-	private auto getInt() const
-	{
-	    long value;
-	    ubyte shift;
-	    ulong pos;
+    private auto getInt() const
+    {
+        long value;
+        ubyte shift;
+        ulong pos;
 
-	    const auto bits = type.FDBsizeof * 8;
-	    while (shift < bits)
-	    {
-	        value |= slice[pos] << shift;
-	        // TODO: use one counter?
-	        ++pos;
-	        shift += 8;
-	    }
-	    if (type < TupleType.IntBase)
-	    	value = -value;
-	    return value;
-	}
+        const auto bits = type.FDBsizeof * 8;
+        while (shift < bits)
+        {
+            value |= slice[pos] << shift;
+            // TODO: use one counter?
+            ++pos;
+            shift += 8;
+        }
+        if (type < TupleType.IntBase)
+            value = -value;
+        return value;
+    }
 
-	private auto getStr() const
-	{
-	    auto chars = (cast(char[])slice);
-	    auto size = chars.indexOf(0, 0);
-	    if (size > 0)
-	    	chars = chars[0..size];
-	    return chars.to!string;
-	}
+    private auto getStr() const
+    {
+        auto chars = (cast(char[])slice);
+        auto size = chars.indexOf(0, 0);
+        if (size > 0)
+            chars = chars[0..size];
+        return chars.to!string;
+    }
 }
 
 alias variant = FDBVariant.create;
