@@ -13,15 +13,14 @@ install:
   # fdb
   - FDB_VER=2.0.10
   - FDB=foundationdb-clients_${FDB_VER}-1_amd64.deb
+  - sudo apt-get -y update || true
+  - sudo apt-get -fy install || true
   # get dmd
   - wget http://downloads.dlang.org/releases/2014/${DMD}
   - sudo dpkg -i ${DMD} || true
   # get fdb
   - wget https://foundationdb.com/downloads/I_accept_the_FoundationDB_Community_License_Agreement/key-value-store/${FDB_VER}/${FDB}
   - sudo dpkg -i ${FDB} || true
-  - sudo apt-get -y update || true
-  - sudo apt-get -fy install || true
-  - sudo dpkg -i ${DMD}
   # get dub
   - wget http://code.dlang.org/files/${DUB}.tar.gz
   - sudo tar -C /usr/local/bin -zxf ${DUB}.tar.gz
