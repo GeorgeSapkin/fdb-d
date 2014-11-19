@@ -128,7 +128,6 @@ class Transaction
         const bool          snapshot,
         ValueFutureCallback callback = null) const
     {
-
         auto fh = fdb_transaction_get(
             th,
             &key[0],

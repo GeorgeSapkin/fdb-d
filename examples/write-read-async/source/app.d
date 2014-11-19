@@ -27,13 +27,13 @@ void main()
         ex.handleException;
     }
 
-    auto key = "SomeKey".pack;
     try
     {
         "Creating write transaction".writeln;
         auto tr    = db.createTransaction;
 
         "Setting SomeKey to SomeValue".writeln;
+        auto key   = "SomeKey".pack;
         auto value = "SomeValue".pack;
         tr.set(key, value);
         tr.commit((ex)
