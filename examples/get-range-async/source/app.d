@@ -32,13 +32,18 @@ void main()
         "Creating write transaction".writeln;
         auto tr     = db.createTransaction;
 
-        "Setting values".writeln;
-        auto key1   = "SomeKey1".pack;
-        auto value1 = "SomeValue1".pack;
+        auto prefix = "SomeKey";
+
+        // packing key into a tuple
+        auto key1   = pack(prefix, "1");
+        auto value1 = pack("SomeValue1");
         tr.set(key1, value1);
 
-        auto key2   = "SomeKey2".pack;
-        auto value2 = "SomeValue2".pack;
+        // packing key into a tuple
+        auto key2   = pack(prefix, "2");
+        auto value2 = pack("SomeValue2");
+
+        "Setting values".writeln;
         tr.set(key2, value2);
 
         tr.commit((ex)
@@ -50,19 +55,35 @@ void main()
             auto f  = tr2.getRangeInclusive(key1, key2);
             f.forEach((Record record)
             {
-                auto keyParts   = record.key.unpack;
-                if (!keyParts.empty && keyParts[0].isTypeOf!string)
+                "Got ".write;
+                auto keyVars = record.key.unpack;
+                if (!keyVars.empty)
                 {
-                    auto key = keyParts[0].get!string;
-                    ("Got " ~ key).write;
+                    foreach (const keyVar; keyVars)
+                        if (keyVar.isTypeOf!string)
+                        {
+                            auto keyPart = keyVar.get!string;
+                            keyPart.write;
+                        }
                 }
+                else
+                    "no key".write;
 
-                auto valueParts = record.value.unpack;
-                if (!valueParts.empty && valueParts[0].isTypeOf!string)
+                " with ".write;
+                auto valueVars = record.value.unpack;
+                if (!valueVars.empty)
                 {
-                    auto value = valueParts[0].get!string;
-                    (" with " ~ value).writeln;
+                    foreach (const valueVar; valueVars)
+                        if (valueVar.isTypeOf!string)
+                        {
+                            auto valuePart = valueVar.get!string;
+                            valuePart.write;
+                        }
                 }
+                else
+                    "no value".write;
+
+                writeln;
             },
             (ex2)
             {
