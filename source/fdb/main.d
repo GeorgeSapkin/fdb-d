@@ -38,19 +38,23 @@ auto networkThread()
     return fdb_run_network();
 }
 
-private void runNetwork()
+void startNetwork()
+in
 {
+    assert(!networkStarted);
+    assert(networkTask is null);
+}
+body
+{
+    if (networkStarted) return;
+
     NetworkOptions.init;
     fdb_setup_network.enforceError;
+
     auto localTask = task!networkThread;
     localTask.executeInNewThread;
     networkTask = cast(shared)localTask;
-}
 
-void startNetwork()
-{
-    if (networkStarted) return;
-    runNetwork();
     networkStarted = true;
 }
 
@@ -62,6 +66,8 @@ in
 }
 body
 {
+    if (!networkStarted) return;
+
     fdb_stop_network.enforceError;
     if (networkTask)
     {
