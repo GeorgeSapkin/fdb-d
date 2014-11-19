@@ -195,7 +195,8 @@ class Transaction
         auto startSel = start.firstGreaterOrEqual;
         auto endSel   = end.firstGreaterOrEqual;
         return getRange(
-            startSel, endSel, limit, mode, snapshot, reverse, iteration, callback);
+            startSel, endSel, limit, mode, snapshot, reverse, iteration,
+            callback);
     }
 
     auto getRangeStartsWith(
