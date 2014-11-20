@@ -1,6 +1,7 @@
 import
     std.algorithm,
     std.array,
+    std.exception,
     std.c.stdlib,
     std.stdio;
 
@@ -60,7 +61,7 @@ void main()
             f.forEach((Record record)
             {
                 // This shouldn't be hit
-                "Hm, got a record. Thats odd.".writeln;
+                enforce(true, "Hm, got a record. Thats odd.");
             },
             (ex2)
             {
@@ -75,7 +76,7 @@ void main()
             });
         });
     }
-    catch (FDBException ex)
+    catch (Exception ex)
     {
         ex.handleException;
     }
