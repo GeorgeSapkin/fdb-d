@@ -61,7 +61,7 @@ void main()
             f.forEach((Record record)
             {
                 // This shouldn't be hit
-                enforce(true, "Hm, got a record. Thats odd.");
+                enforce(true, "Hm, got a record. That's odd.");
             },
             (ex2)
             {
