@@ -13,7 +13,7 @@ struct Selector
 
 struct RangeInfo
 {
-    Selector        start;
+    Selector        begin;
     Selector        end;
     int             limit;
     StreamingMode   mode;

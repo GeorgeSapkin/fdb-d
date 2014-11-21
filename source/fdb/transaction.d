@@ -1,6 +1,7 @@
 module fdb.transaction;
 
 import
+    std.array,
     std.conv,
     std.exception;
 
@@ -49,6 +50,14 @@ class Transaction
     }
 
     void set(const Key key, const Value value) const
+    in
+    {
+        enforce(key !is null);
+        enforce(!key.empty);
+        enforce(value !is null);
+        enforce(!value.empty);
+    }
+    body
     {
         fdb_transaction_set(
             th,
@@ -91,11 +100,25 @@ class Transaction
     }
 
     void clear(const Key key) const
+    in
+    {
+        enforce(key !is null);
+        enforce(!key.empty);
+    }
+    body
     {
         fdb_transaction_clear(th, &key[0], cast(int)key.length);
     }
 
     void clearRange(const Key begin, const Key end) const
+    in
+    {
+        enforce(begin !is null);
+        enforce(!begin.empty);
+        enforce(end !is null);
+        enforce(!end.empty);
+    }
+    body
     {
         fdb_transaction_clear_range(
             th,
@@ -106,6 +129,12 @@ class Transaction
     }
 
     auto clearRangeStartsWith(const Key prefix) const
+    in
+    {
+        enforce(prefix !is null);
+        enforce(!prefix.empty);
+    }
+    body
     {
         auto begin = prefix;
         auto end   = prefix.getEndPrefix;
@@ -117,7 +146,6 @@ class Transaction
         const bool          snapshot,
         KeyFutureCallback   callback = null) const
     {
-
         auto fh = fdb_transaction_get_key(
             th,
             &selector.key[0],
@@ -134,6 +162,12 @@ class Transaction
         const Key           key,
         const bool          snapshot,
         ValueFutureCallback callback = null) const
+    in
+    {
+        enforce(key !is null);
+        enforce(!key.empty);
+    }
+    body
     {
         auto fh = fdb_transaction_get(
             th,
@@ -149,16 +183,19 @@ class Transaction
         RangeInfo               info,
         KeyValueFutureCallback  callback = null) const
     {
+        auto begin = sanitizeKey!0x00(info.begin.key);
+        auto end   = sanitizeKey!0xff(info.end.key);
+
         auto fh = fdb_transaction_get_range(
             th,
 
-            &info.start.key[0],
-            cast(int)info.start.key.length,
-            cast(fdb_bool_t)info.start.orEqual,
-            info.start.offset,
+            &begin[0],
+            cast(int)begin.length,
+            cast(fdb_bool_t)info.begin.orEqual,
+            info.begin.offset,
 
-            &info.end.key[0],
-            cast(int)info.end.key.length,
+            &end[0],
+            cast(int)end.length,
             cast(fdb_bool_t)info.end.orEqual,
             info.end.offset,
 
@@ -175,10 +212,11 @@ class Transaction
     }
 
     /**
-     * Returns: Key-value pairs within [start, end) range
+     * Returns: Key-value pairs within (begin, end) range with boundaries
+     *          included depending on the selectors
      */
     auto getRange(
-        Selector                start,
+        Selector                begin,
         Selector                end,
         const int               limit       = 0,
         const StreamingMode     mode        = StreamingMode.ITERATOR,
@@ -188,13 +226,15 @@ class Transaction
         KeyValueFutureCallback  callback    = null) const
     {
         auto info = RangeInfo(
-            start, end, limit, mode, iteration, snapshot, reverse);
+            begin, end, limit, mode, iteration, snapshot, reverse);
         return getRange(info, callback);
     }
 
-    /** ditto */
+    /**
+     * Returns: Key-value pairs within [begin, end) range
+     */
     auto getRange(
-        const Key               start,
+        const Key               begin,
         const Key               end,
         const int               limit       = 0,
         const StreamingMode     mode        = StreamingMode.ITERATOR,
@@ -203,18 +243,18 @@ class Transaction
         const int               iteration   = 1,
         KeyValueFutureCallback  callback    = null) const
     {
-        auto startSel = start.firstGreaterOrEqual;
+        auto beginSel = begin.firstGreaterOrEqual;
         auto endSel   = end.firstGreaterOrEqual;
         return getRange(
-            startSel, endSel, limit, mode, snapshot, reverse, iteration,
+            beginSel, endSel, limit, mode, snapshot, reverse, iteration,
             callback);
     }
 
     /**
-     * Returns: Key-value pairs within [start, end] range
+     * Returns: Key-value pairs within [begin, end] range
      */
     auto getRangeInclusive(
-        const Key               start,
+        const Key               begin,
         const Key               end,
         const int               limit       = 0,
         const StreamingMode     mode        = StreamingMode.ITERATOR,
@@ -223,10 +263,10 @@ class Transaction
         const int               iteration   = 1,
         KeyValueFutureCallback  callback    = null) const
     {
-        auto startSel = start.firstGreaterOrEqual;
+        auto beginSel = begin.firstGreaterOrEqual;
         auto endSel   = end.firstGreaterThan;
         return getRange(
-            startSel, endSel, limit, mode, snapshot, reverse, iteration,
+            beginSel, endSel, limit, mode, snapshot, reverse, iteration,
             callback);
     }
 
@@ -239,13 +279,19 @@ class Transaction
         const int               iteration   = 1,
         KeyValueFutureCallback  callback    = null) const
     {
-        auto start = prefix;
-        auto end   = prefix.getEndPrefix;
+        auto begin = sanitizeKey!0x00(prefix);
+        auto end   = sanitizeKey!0xff(prefix).getEndPrefix;
         return getRange(
-            start, end, limit, mode, snapshot, reverse, iteration, callback);
+            begin, end, limit, mode, snapshot, reverse, iteration, callback);
     }
 
     auto watch(const Key key, VoidFutureCallback callback = null) const
+    in
+    {
+        enforce(key !is null);
+        enforce(!key.empty);
+    }
+    body
     {
         auto fh = fdb_transaction_watch(
             th,
@@ -256,28 +302,36 @@ class Transaction
     }
 
     private void addConflictRange(
-        const Key               start,
+        const Key               begin,
         const Key               end,
         const ConflictRangeType type) const
+    in
+    {
+        enforce(begin !is null);
+        enforce(!begin.empty);
+        enforce(end !is null);
+        enforce(!end.empty);
+    }
+    body
     {
         auto err = fdb_transaction_add_conflict_range(
             th,
-            &start[0],
-            cast(int)start.length,
+            &begin[0],
+            cast(int)begin.length,
             &end[0],
             cast(int)end.length,
             type);
         enforceError(err);
     }
 
-    void addReadConflictRange(const Key start, const Key end) const
+    void addReadConflictRange(const Key begin, const Key end) const
     {
-        addConflictRange(start, end, ConflictRangeType.READ);
+        addConflictRange(begin, end, ConflictRangeType.READ);
     }
 
-    void addWriteConflictRange(const Key start, const Key end) const
+    void addWriteConflictRange(const Key begin, const Key end) const
     {
-        addConflictRange(start, end, ConflictRangeType.WRITE);
+        addConflictRange(begin, end, ConflictRangeType.WRITE);
     }
 
     auto onError(
@@ -290,6 +344,11 @@ class Transaction
     }
 
     void setReadVersion(const int ver) const
+    in
+    {
+        enforce(ver > 0);
+    }
+    body
     {
         fdb_transaction_set_read_version(th, ver);
     }
@@ -311,6 +370,12 @@ class Transaction
     auto getAddressesForKey(
         const Key               key,
         StringFutureCallback    callback = null) const
+    in
+    {
+        enforce(key !is null);
+        enforce(!key.empty);
+    }
+    body
     {
         auto fh = fdb_transaction_get_addresses_for_key(
             th,
@@ -388,8 +453,15 @@ class Transaction
         const Key           key,
         const Value         value,
         const MutationType  type) const
+    in
     {
-
+        enforce(key !is null);
+        enforce(!key.empty);
+        enforce(value !is null);
+        enforce(!value.empty);
+    }
+    body
+    {
         fdb_transaction_atomic_op(
             th,
             &key[0],
@@ -583,7 +655,20 @@ class Transaction
     }
 }
 
+private auto sanitizeKey(alias fallback)(const Key key) pure
+{
+    if (key is null || key.empty)
+        return [ cast(ubyte) fallback ];
+    return key;
+}
+
 private auto getEndPrefix(const Key prefix) pure
+in
+{
+    enforce(prefix !is null);
+    enforce(prefix.length > 0);
+}
+body
 {
     ulong i = prefix.length;
 
