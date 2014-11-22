@@ -671,6 +671,7 @@ in
 body
 {
     ulong i = prefix.length;
+    if (i == 1) return [ cast(ubyte) 0xff ];
 
     do --i;
     while (i != 0 && prefix[i] == 0xff);
