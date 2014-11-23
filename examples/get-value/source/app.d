@@ -9,18 +9,11 @@ import
 
 void main()
 {
-    "Starting network".writeln;
-    startNetwork;
-
-    Cluster  cluster;
     Database db;
     try
     {
-        "Creating cluster".writeln;
-        cluster = createCluster;
-
         "Opening database".writeln;
-        db = cluster.openDatabase;
+        db = fdb.open;
     }
     catch (FDBException ex)
     {
@@ -66,13 +59,13 @@ void main()
     }
 
     "Stopping network".writeln;
-    stopNetwork;
+    fdb.close;
 }
 
 void handleException(E)(E ex)
 {
     ex.writeln;
     "Stopping network".writeln;
-    stopNetwork;
+    fdb.close;
     exit(1);
 }

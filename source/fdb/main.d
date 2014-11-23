@@ -98,3 +98,16 @@ body
 
     return new Cluster(ch);
 }
+
+auto open(const string clusterFilePath = null)
+{
+    startNetwork;
+    auto cluster = createCluster(clusterFilePath);
+    auto db      = cluster.openDatabase;
+    return db;
+}
+
+auto close()
+{
+    stopNetwork;
+}

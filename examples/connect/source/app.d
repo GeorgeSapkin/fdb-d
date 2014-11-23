@@ -6,22 +6,16 @@ import
 
 void main()
 {
-    "Starting network".writeln;
-    startNetwork;
-
     try
     {
-        "Creating cluster".writeln;
-        auto cluster = createCluster;
-
         "Opening database".writeln;
-        auto db = cluster.openDatabase;
+        auto db = fdb.open;
     }
     catch (FDBException ex)
     {
         ex.writeln;
     }
 
-    "Stopping network".writeln;
-    stopNetwork;
+    "Closing connection".writeln;
+    fdb.close;
 }
