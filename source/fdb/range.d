@@ -46,10 +46,12 @@ struct RecordRange
         Transaction tr)
     {
         this.records = records;
-        this.end     = records.back.key.dup;
         this._more   = more;
         this.info    = info;
         this.tr      = tr;
+
+        if (!records.empty)
+            this.end = records.back.key.dup;
     }
 
     @property bool empty() const
