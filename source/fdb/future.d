@@ -45,10 +45,12 @@ shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
     {
         futureSemaphore = cast(shared)new Semaphore;
 
+        auto cb = args[$-1];
         t = cast(shared)task!fun(
-            args,
+            args[0..$-1],
             (Exception ex)
             {
+                cb(ex);
                 notify;
             });
         taskPool.put(cast(T)t);
@@ -352,10 +354,9 @@ shared class KeyValueFuture
     }
 
     static void foreachTask(FC)(
-        shared KeyValueFuture   future,
-        FC                      fun,
-        CompletionCallback      cb,
-        CompletionCallback      futureCb)
+        shared KeyValueFuture future,
+        FC                    fun,
+        CompletionCallback    cb)
     {
         try
         {
@@ -374,12 +375,10 @@ shared class KeyValueFuture
             }
 
             cb(null);
-            futureCb(null);
         }
         catch (Exception ex)
         {
             cb(ex);
-            futureCb(ex);
         }
     }
 }

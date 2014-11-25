@@ -146,12 +146,10 @@ auto doTransaction(
 void doTransactionWorker(
     Transaction        tr,
     WorkFunc           func,
-    VoidFutureCallback commitCallback,
     CompletionCallback futureCompletionCallback)
 {
     retryLoop(tr, func, (ex)
     {
-        commitCallback(ex);
         futureCompletionCallback(ex);
     });
 }
