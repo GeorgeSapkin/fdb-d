@@ -78,18 +78,28 @@ struct RecordRange
 
     private void fetchNextBatch()
     {
+        if (!end)
+        {
+            _more = false;
+            return;
+        }
+
         info.iteration++;
 
         auto batchInfo = info;
-        if (!batchInfo.reverse)
-            batchInfo.begin = end.firstGreaterThan;
-        else
+        if (batchInfo.reverse)
             batchInfo.end   = end.firstGreaterOrEqual;
+        else
+            batchInfo.begin = end.firstGreaterThan;
 
         auto future = tr.getRange(batchInfo);
         auto batch  = cast(RecordRange)future.await;
         records    ~= batch.records;
         _more       = batch.more;
-        end         = records.back.key.dup;
+
+        if (!records.empty)
+            end     = records.back.key.dup;
+        else
+            end     = null;
     }
 }
