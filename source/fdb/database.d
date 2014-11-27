@@ -7,23 +7,26 @@ import
 
 import
     fdb.cluster,
+    fdb.disposable,
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,
     fdb.future,
     fdb.transaction;
 
-class Database
+shared class Database : IDisposable
 {
     private const Cluster  cluster;
     private DatabaseHandle dbh;
+
+    private Transaction[]  transactions;
 
     invariant()
     {
         assert(cluster !is null);
     }
 
-    this(const Cluster cluster, DatabaseHandle dbh)
+    this(DatabaseHandle dbh, const shared Cluster cluster)
     in
     {
         enforce(cluster !is null, "cluster must be set");
@@ -31,25 +34,24 @@ class Database
     }
     body
     {
+        this.dbh     = cast(shared)dbh;
         this.cluster = cluster;
-        this.dbh     = dbh;
     }
 
     ~this()
     {
-        destroy;
+        dispose;
     }
 
-    void destroy()
+    void dispose()
     {
-        if (dbh)
-        {
-            fdb_database_destroy(dbh);
-            dbh = null;
-        }
+        if (!dbh) return;
+
+        fdb_database_destroy(cast(DatabaseHandle)dbh);
+        dbh = null;
     }
 
-    auto createTransaction() const
+    auto createTransaction()
     out (result)
     {
         assert(result !is null);
@@ -57,8 +59,13 @@ class Database
     body
     {
         TransactionHandle th;
-        fdb_database_create_transaction(dbh, &th).enforceError;
-        return new Transaction(this, th);
+        auto err = fdb_database_create_transaction(
+            cast(DatabaseHandle)dbh,
+            &th);
+        enforceError(err);
+        auto tr       = new shared Transaction(th, this);
+        transactions ~= tr;
+        return tr;
     }
 
     /**
@@ -111,7 +118,7 @@ class Database
         const long           value) const
     {
         const auto err = fdb_database_set_option(
-            dbh,
+            cast(DatabaseHandle)dbh,
             op,
             cast(immutable(char)*)&value,
             cast(int)value.sizeof);
@@ -123,7 +130,7 @@ class Database
         const string         value) const
     {
         const auto err = fdb_database_set_option(
-            dbh,
+            cast(DatabaseHandle)dbh,
             op,
             value.toStringz,
             cast(int)value.length);
@@ -131,10 +138,10 @@ class Database
     }
 }
 
-alias WorkFunc = void delegate(Transaction tr, VoidFutureCallback cb);
+alias WorkFunc = void delegate(shared Transaction tr, VoidFutureCallback cb);
 
 auto doTransaction(
-    Database db,
+    shared Database db,
     WorkFunc func,
     VoidFutureCallback commitCallback)
 {
@@ -144,7 +151,7 @@ auto doTransaction(
 };
 
 void doTransactionWorker(
-    Transaction        tr,
+    shared Transaction tr,
     WorkFunc           func,
     CompletionCallback futureCompletionCallback)
 {
@@ -155,8 +162,8 @@ void doTransactionWorker(
 }
 
 private void retryLoop(
-    Transaction tr,
-    WorkFunc func,
+    shared Transaction tr,
+    WorkFunc           func,
     VoidFutureCallback cb)
 {
     func(tr, (ex)
@@ -175,9 +182,9 @@ private void retryLoop(
 }
 
 private void onError(
-    Transaction tr,
-    Exception ex,
-    WorkFunc func,
+    shared Transaction tr,
+    Exception          ex,
+    WorkFunc           func,
     VoidFutureCallback cb)
 {
     if (auto fdbex = cast(FDBException)ex)

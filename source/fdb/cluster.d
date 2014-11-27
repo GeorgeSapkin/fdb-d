@@ -7,13 +7,16 @@ import
 
 import
     fdb.database,
+    fdb.disposable,
     fdb.error,
     fdb.fdb_c,
     fdb.future;
 
-class Cluster
+shared class Cluster : IDisposable
 {
     private ClusterHandle ch;
+
+    private Database[]    databases;
 
     this(ClusterHandle ch)
     in
@@ -22,21 +25,20 @@ class Cluster
     }
     body
     {
-        this.ch = ch;
+        this.ch = cast(shared)ch;
     }
 
     ~this()
     {
-        destroy;
+        dispose;
     }
 
-    void destroy()
+    void dispose()
     {
-        if (ch)
-        {
-            fdb_cluster_destroy(ch);
-            ch = null;
-        }
+        if (!ch) return;
+
+        fdb_cluster_destroy(cast(ClusterHandle)ch);
+        ch = null;
     }
 
     auto openDatabase(const string dbName = "DB")
@@ -47,7 +49,7 @@ class Cluster
     body
     {
         auto fh = fdb_cluster_create_database(
-            ch,
+            cast(ClusterHandle)ch,
             dbName.toStringz(),
             cast(int)dbName.length);
         scope auto future = createFuture!VoidFuture(fh);
@@ -55,6 +57,8 @@ class Cluster
 
         DatabaseHandle dbh;
         fdb_future_get_database(fh, &dbh).enforceError;
-        return new Database(this, dbh);
+        auto db    = new shared Database(dbh, this);
+        databases ~= db;
+        return db;
     }
 }

@@ -23,11 +23,11 @@ struct Record
 
 struct RecordRange
 {
-    private Record[]    records;
-    private RangeInfo   info;
-    private bool        _more;
-    private Transaction tr;
-    private Key         end;
+    private Record[]           records;
+    private RangeInfo          info;
+    private bool               _more;
+    private shared Transaction tr;
+    private Key                end;
 
     @property auto more()
     {
@@ -40,10 +40,10 @@ struct RecordRange
     }
 
     this(
-        Record[]    records,
-        const bool  more,
-        RangeInfo   info,
-        Transaction tr)
+        Record[]           records,
+        const bool         more,
+        RangeInfo          info,
+        shared Transaction tr)
     {
         this.records = records;
         this._more   = more;

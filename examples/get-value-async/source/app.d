@@ -9,7 +9,7 @@ import
 
 void main()
 {
-    Database db;
+    shared Database db;
     try
     {
         "Opening database".writeln;

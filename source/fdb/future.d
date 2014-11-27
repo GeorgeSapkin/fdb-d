@@ -13,6 +13,7 @@ import
     std.traits;
 
 import
+    fdb.disposable,
     fdb.error,
     fdb.fdb_c,
     fdb.range,
@@ -121,35 +122,34 @@ class BasicFuture(V)
 
 alias FutureCallback(V) = void delegate(Exception ex, V value);
 
-shared class FDBFutureBase(C, V) : FutureBase!V
+shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
 {
     private alias SF    = shared FDBFutureBase!(C, V);
     private alias SFH   = shared FutureHandle;
     private alias SE    = shared fdb_error_t;
 
-    private FutureHandle        fh;
-    private const Transaction   tr;
-    private C                   callbackFunc;
+    private FutureHandle fh;
+    private Transaction  tr;
+    private C            callbackFunc;
 
-    this(FutureHandle fh, const Transaction tr)
+    this(FutureHandle fh, shared Transaction tr)
     {
         this.fh = cast(shared)fh;
-        this.tr = cast(shared)tr;
+        this.tr = tr;
     }
 
     ~this()
     {
-        destroy;
+        dispose;
     }
 
-    void destroy()
+    void dispose()
     {
-        if (fh)
-        {
-            // NB : Also releases the memory returned by get functions
-            fdb_future_destroy(cast(FutureHandle)fh);
-            fh = null;
-        }
+        if (!fh) return;
+
+        // NB : Also releases the memory returned by get functions
+        fdb_future_destroy(cast(FutureHandle)fh);
+        fh = null;
     }
 
     auto start(C callbackFunc)
@@ -229,7 +229,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V
 
 private mixin template FDBFutureCtor()
 {
-    this(FutureHandle fh, const Transaction tr = null)
+    this(FutureHandle fh, shared Transaction tr = null)
     {
         super(fh, tr);
     }
@@ -307,7 +307,7 @@ shared class KeyValueFuture
 {
     const RangeInfo info;
 
-    this(FutureHandle fh, const Transaction tr, RangeInfo info)
+    this(FutureHandle fh, shared Transaction tr, RangeInfo info)
     {
         super(fh, tr);
 
@@ -337,7 +337,7 @@ shared class KeyValueFuture
             records,
             cast(bool)more,
             cast(RangeInfo)info,
-            cast(Transaction)tr);
+            tr);
     }
 
     static Record createRecord(ref FDBKeyValue kv) pure

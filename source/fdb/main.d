@@ -96,7 +96,7 @@ body
     ClusterHandle ch;
     fdb_future_get_cluster(fh, &ch).enforceError;
 
-    return new Cluster(ch);
+    return new shared Cluster(ch);
 }
 
 auto open(const string clusterFilePath = null)
