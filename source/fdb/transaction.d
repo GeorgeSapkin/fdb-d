@@ -85,9 +85,7 @@ shared class Transaction : IDisposable
     {
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
-        {
             fdb_transaction_cancel(cast(TransactionHandle)th);
-        }
     }
 
     /**
@@ -97,9 +95,7 @@ shared class Transaction : IDisposable
     {
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
-        {
             fdb_transaction_reset(cast(TransactionHandle)th);
-        }
     }
 
     void clear(const Key key) const
@@ -152,7 +148,7 @@ shared class Transaction : IDisposable
         const bool          snapshot,
         KeyFutureCallback   callback = null)
     {
-        auto fh = fdb_transaction_get_key(
+        auto fh      = fdb_transaction_get_key(
             cast(TransactionHandle)th,
             &selector.key[0],
             cast(int)selector.key.length,
@@ -161,7 +157,8 @@ shared class Transaction : IDisposable
             cast(fdb_bool_t)snapshot);
 
         auto future  = startOrCreateFuture!KeyFuture(fh, this, callback);
-        futures     ~= future;
+        synchronized (this)
+            futures ~= future;
         return future;
     }
 
@@ -176,14 +173,15 @@ shared class Transaction : IDisposable
     }
     body
     {
-        auto fh = fdb_transaction_get(
+        auto fh      = fdb_transaction_get(
             cast(TransactionHandle)th,
             &key[0],
             cast(int)key.length,
             snapshot);
 
         auto future  = startOrCreateFuture!ValueFuture(fh, this, callback);
-        futures     ~= future;
+        synchronized (this)
+            futures ~= future;
         return future;
     }
 
@@ -194,7 +192,7 @@ shared class Transaction : IDisposable
         auto begin = sanitizeKey!0x00(info.begin.key);
         auto end   = sanitizeKey!0xff(info.end.key);
 
-        auto fh = fdb_transaction_get_range(
+        auto fh    = fdb_transaction_get_range(
             cast(TransactionHandle)cast(TransactionHandle)th,
 
             &begin[0],
@@ -216,7 +214,8 @@ shared class Transaction : IDisposable
 
         auto future  = startOrCreateFuture!KeyValueFuture(
             fh, this, info, callback);
-        futures     ~= future;
+        synchronized (this)
+            futures ~= future;
         return future;
     }
 
@@ -302,12 +301,13 @@ shared class Transaction : IDisposable
     }
     body
     {
-        auto fh = fdb_transaction_watch(
+        auto fh      = fdb_transaction_watch(
             cast(TransactionHandle)th,
             &key[0],
             cast(int)key.length);
         auto future  = startOrCreateFuture!WatchFuture(fh, this, callback);
-        futures     ~= future;
+        synchronized (this)
+            futures ~= future;
         return future;
     }
 
@@ -352,7 +352,8 @@ shared class Transaction : IDisposable
             cast(TransactionHandle)th,
             ex.err);
         auto future  = startOrCreateFuture!VoidFuture(fh, this, callback);
-        futures     ~= future;
+        synchronized (this)
+            futures ~= future;
         return future;
     }
 
@@ -373,7 +374,8 @@ shared class Transaction : IDisposable
         auto fh      = fdb_transaction_get_read_version(
             cast(TransactionHandle)th);
         auto future  = startOrCreateFuture!VersionFuture(fh, this, callback);
-        futures     ~= future;
+        synchronized (this)
+            futures ~= future;
         return future;
     }
 
@@ -397,13 +399,14 @@ shared class Transaction : IDisposable
     }
     body
     {
-        auto fh = fdb_transaction_get_addresses_for_key(
+        auto fh      = fdb_transaction_get_addresses_for_key(
             cast(TransactionHandle)th,
             &key[0],
             cast(int)key.length);
 
         auto future  = startOrCreateFuture!StringFuture(fh, this, callback);
-        futures     ~= future;
+        synchronized (this)
+            futures ~= future;
         return future;
     }
 

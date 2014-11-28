@@ -59,12 +59,14 @@ shared class Database : IDisposable
     body
     {
         TransactionHandle th;
-        auto err = fdb_database_create_transaction(
+        auto err          = fdb_database_create_transaction(
             cast(DatabaseHandle)dbh,
             &th);
         enforceError(err);
-        auto tr       = new shared Transaction(th, this);
-        transactions ~= tr;
+
+        auto tr           = new shared Transaction(th, this);
+        synchronized (this)
+            transactions ~= tr;
         return tr;
     }
 

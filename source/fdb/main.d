@@ -53,7 +53,7 @@ body
 
     auto localTask = task!networkThread;
     localTask.executeInNewThread;
-    networkTask = cast(shared)localTask;
+    networkTask    = cast(shared)localTask;
 
     networkStarted = true;
 }
@@ -73,9 +73,9 @@ body
     {
         auto localTask = cast(NetworkTask)networkTask;
         localTask.yieldForce.enforceError;
-        networkTask = null;
+        networkTask    = null;
     }
-    networkStarted = false;
+    networkStarted     = false;
 }
 
 auto createCluster(const string clusterFilePath = null)
@@ -89,12 +89,13 @@ out (result)
 }
 body
 {
-    auto fh = fdb_create_cluster(clusterFilePath.toStringz);
+    auto fh           = fdb_create_cluster(clusterFilePath.toStringz);
     scope auto future = createFuture!VoidFuture(fh);
     future.await;
 
     ClusterHandle ch;
-    fdb_future_get_cluster(fh, &ch).enforceError;
+    auto err          = fdb_future_get_cluster(fh, &ch);
+    enforceError(err);
 
     return new shared Cluster(ch);
 }

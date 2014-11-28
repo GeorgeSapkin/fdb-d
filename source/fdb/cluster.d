@@ -48,17 +48,20 @@ shared class Cluster : IDisposable
     }
     body
     {
-        auto fh = fdb_cluster_create_database(
+        auto fh            = fdb_cluster_create_database(
             cast(ClusterHandle)ch,
             dbName.toStringz(),
             cast(int)dbName.length);
-        scope auto future = createFuture!VoidFuture(fh);
+        scope auto future  = createFuture!VoidFuture(fh);
         future.await;
 
         DatabaseHandle dbh;
-        fdb_future_get_database(fh, &dbh).enforceError;
-        auto db    = new shared Database(dbh, this);
-        databases ~= db;
+        auto err           = fdb_future_get_database(fh, &dbh);
+        enforceError(err);
+
+        auto db            = new shared Database(dbh, this);
+        synchronized (this)
+            databases     ~= db;
         return db;
     }
 }
