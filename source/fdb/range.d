@@ -29,12 +29,12 @@ struct RecordRange
     private shared Transaction tr;
     private Key                end;
 
-    @property auto more()
+    @property auto more() const pure @nogc
     {
         return _more;
     }
 
-    @property auto length()
+    @property auto length() const pure @nogc
     {
         return records.length;
     }
@@ -54,12 +54,12 @@ struct RecordRange
             this.end = records.back.key.dup;
     }
 
-    @property bool empty() const
+    @property bool empty() const pure @nogc
     {
-        return records.length == 0;
+        return records.empty;
     }
 
-    auto front()
+    auto front() pure @nogc
     {
         return records[0];
     }
@@ -71,7 +71,7 @@ struct RecordRange
             fetchNextBatch;
     }
 
-    auto save()
+    auto save() pure @nogc
     {
         return this;
     }
