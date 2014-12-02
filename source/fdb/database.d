@@ -168,19 +168,26 @@ private void retryLoop(
     WorkFunc           func,
     VoidFutureCallback cb)
 {
-    func(tr, (ex)
+    try
     {
-        if (ex)
-            onError(tr, ex, func, cb);
-        else
-            tr.commit((commitErr)
-            {
-                if (commitErr)
-                    onError(tr, commitErr, func, cb);
-                else
-                    cb(commitErr);
-            });
-    });
+        func(tr, (ex)
+        {
+            if (ex)
+                onError(tr, ex, func, cb);
+            else
+                tr.commit((commitErr)
+                {
+                    if (commitErr)
+                        onError(tr, commitErr, func, cb);
+                    else
+                        cb(commitErr);
+                });
+        });
+    }
+    catch (Exception error)
+    {
+        onError(tr, error, func, cb);
+    }
 }
 
 private void onError(
