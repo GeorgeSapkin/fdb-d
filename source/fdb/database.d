@@ -147,7 +147,7 @@ auto doTransaction(
     WorkFunc func,
     VoidFutureCallback commitCallback)
 {
-    auto tr = db.createTransaction();
+    auto tr     = db.createTransaction();
     auto future = createFuture!doTransactionWorker(tr, func, commitCallback);
     return future;
 };
@@ -184,9 +184,9 @@ private void retryLoop(
                 });
         });
     }
-    catch (Exception error)
+    catch (Exception ex)
     {
-        onError(tr, error, func, cb);
+        onError(tr, ex, func, cb);
     }
 }
 
