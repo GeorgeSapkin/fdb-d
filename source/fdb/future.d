@@ -34,7 +34,11 @@ shared class FutureBase(V)
     abstract shared(V) await();
 }
 
-shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
+shared class FunctionFuture(alias fun, Args...) :
+    FutureBase!(ReturnType!fun),
+
+    // dummy implementation to allow storage in KeyValueFuture
+    IDisposable
 {
     alias V = ReturnType!fun;
     alias T = Task!(fun, ParameterTypeTuple!fun) *;
@@ -56,6 +60,8 @@ shared class FunctionFuture(alias fun, Args...) : FutureBase!(ReturnType!fun)
             });
         taskPool.put(cast(T)t);
     }
+
+    void dispose() {}
 
     void notify()
     {
@@ -307,6 +313,8 @@ shared class KeyValueFuture
 {
     const RangeInfo info;
 
+    private IDisposable[] futures;
+
     this(FutureHandle fh, shared Transaction tr, RangeInfo info)
     {
         super(fh, tr);
@@ -349,8 +357,10 @@ shared class KeyValueFuture
 
     auto forEach(FC)(FC fun, CompletionCallback cb)
     {
-        auto f = createFuture!(foreachTask!FC)(this, fun, cb);
-        return f;
+        auto future  = createFuture!(foreachTask!FC)(this, fun, cb);
+        synchronized (this)
+            futures ~= future;
+        return future;
     }
 
     static void foreachTask(FC)(
