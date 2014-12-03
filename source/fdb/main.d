@@ -30,7 +30,8 @@ shared static this()
 
 private void selectAPIVersion(const int apiVersion)
 {
-    fdb_select_api_version(apiVersion).enforceError;
+    auto err = fdb_select_api_version(apiVersion);
+    enforceError(err);
 }
 
 auto networkThread()
@@ -49,7 +50,8 @@ body
     if (networkStarted) return;
 
     NetworkOptions.init;
-    fdb_setup_network.enforceError;
+    auto err       = fdb_setup_network();
+    enforceError(err);
 
     auto localTask = task!networkThread;
     localTask.executeInNewThread;
@@ -68,13 +70,18 @@ body
 {
     if (!networkStarted) return;
 
-    fdb_stop_network.enforceError;
+    auto err = fdb_stop_network();
+    enforceError(err);
+
     if (networkTask)
     {
         auto localTask = cast(NetworkTask)networkTask;
-        localTask.yieldForce.enforceError;
+        auto taskErr   = localTask.yieldForce;
+        enforceError(taskErr);
+
         networkTask    = null;
     }
+
     networkStarted     = false;
 }
 
