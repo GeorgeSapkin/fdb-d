@@ -2,10 +2,10 @@ module fdb.main;
 
 import
     std.array,
+    std.concurrency,
     std.conv,
     std.exception,
     std.format,
-    std.parallelism,
     std.string;
 
 import
@@ -17,9 +17,6 @@ import
     fdb.networkoptions;
 
 private shared auto networkStarted = false;
-
-private alias NetworkTask = Task!(networkThread)*;
-private shared NetworkTask networkTask;
 
 private auto FBD_RUNTIME_API_VERSION = 200;
 
@@ -35,15 +32,20 @@ private void selectAPIVersion(const int apiVersion)
 }
 
 auto networkThread()
+in
 {
-    return fdb_run_network();
+    assert(ownerTid != Tid.init);
+}
+body
+{
+    auto err = fdb_run_network();
+    ownerTid.send(err);
 }
 
 void startNetwork()
 in
 {
     assert(!networkStarted);
-    assert(networkTask is null);
 }
 body
 {
@@ -53,10 +55,7 @@ body
     auto err       = fdb_setup_network();
     enforceError(err);
 
-    auto localTask = task!networkThread;
-    localTask.executeInNewThread;
-    networkTask    = cast(shared)localTask;
-
+    spawn(&networkThread);
     networkStarted = true;
 }
 
@@ -64,25 +63,18 @@ void stopNetwork()
 in
 {
     assert(networkStarted);
-    assert(networkTask !is null);
 }
 body
 {
     if (!networkStarted) return;
 
-    auto err = fdb_stop_network();
+    auto err       = fdb_stop_network();
     enforceError(err);
 
-    if (networkTask)
-    {
-        auto localTask = cast(NetworkTask)networkTask;
-        auto taskErr   = localTask.yieldForce;
-        enforceError(taskErr);
+    auto taskErr   = receiveOnly!fdb_error_t;
+    enforceError(taskErr);
 
-        networkTask    = null;
-    }
-
-    networkStarted     = false;
+    networkStarted = false;
 }
 
 auto createCluster(const string clusterFilePath = null)
@@ -115,7 +107,4 @@ auto open(const string clusterFilePath = null)
     return db;
 }
 
-auto close()
-{
-    stopNetwork;
-}
+alias close = stopNetwork;
