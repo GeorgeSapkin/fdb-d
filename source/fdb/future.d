@@ -320,22 +320,18 @@ shared class KeyValueFuture
         if (err != FDBError.NONE)
             return typeof(return).init;
 
-        Record[] records = kvs[0..len]
-            .map!createRecord
-            .array;
+        auto records = minimallyInitializedArray!(Record[])(len);
+        foreach (i, kv; kvs[0..len])
+        {
+            records[i].key   = (cast(Key)  kv.key  [0..kv.key_length  ]).dup;
+            records[i].value = (cast(Value)kv.value[0..kv.value_length]).dup;
+        }
 
         return RecordRange(
             records,
             cast(bool)more,
             cast(RangeInfo)info,
             tr);
-    }
-
-    static Record createRecord(ref FDBKeyValue kv) pure
-    {
-        auto key   = (cast(Key)  kv.key  [0..kv.key_length  ]).dup;
-        auto value = (cast(Value)kv.value[0..kv.value_length]).dup;
-        return Record(key, value);
     }
 
     auto forEach(FC)(FC fun, CompletionCallback cb)
