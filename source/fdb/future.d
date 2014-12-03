@@ -44,40 +44,25 @@ shared class FunctionFuture(alias fun, Args...) :
     alias T = Task!(fun, ParameterTypeTuple!fun) *;
     private T t;
 
-    private Semaphore futureSemaphore;
-
     this(Args args)
     {
-        futureSemaphore = cast(shared)new Semaphore;
-
-        auto cb = args[$-1];
-        t = cast(shared)task!fun(
-            args[0..$-1],
-            (Exception ex)
-            {
-                cb(ex);
-                notify;
-            });
-        taskPool.put(cast(T)t);
+        t = cast(shared)task!fun(args);
+        auto localTask = cast(T)t;
+        //localTask.executeInNewThread;
+        taskPool.put(localTask);
     }
 
     void dispose() {}
 
-    void notify()
-    {
-        (cast(Semaphore)futureSemaphore).notify;
-    }
-
     override shared(V) await()
     {
-        (cast(Semaphore)futureSemaphore).wait;
-
         try
         {
+            auto localTask = cast(T)t;
             static if (!is(V == void))
-                value = (cast(T)t).yieldForce;
+                value = localtask.yieldForce;
             else
-                (cast(T)t).yieldForce;
+                localTask.yieldForce;
         }
         catch (Exception ex)
         {
@@ -210,8 +195,6 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
 
     static void worker(SFH f, SF thiz)
     {
-        scope (exit) delete thiz;
-
         shared fdb_error_t err;
         with (thiz)
         {
