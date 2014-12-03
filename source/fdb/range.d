@@ -94,7 +94,7 @@ struct RecordRange
 
         auto future = tr.getRange(batchInfo);
         auto batch  = cast(RecordRange)future.await;
-        records    ~= batch.records;
+        records     = batch.records;
         _more       = batch.more;
 
         if (!records.empty)
