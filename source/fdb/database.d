@@ -143,8 +143,8 @@ shared class Database : IDisposable
 alias WorkFunc = void delegate(shared Transaction tr, VoidFutureCallback cb);
 
 auto doTransaction(
-    shared Database db,
-    WorkFunc func,
+    shared Database    db,
+    WorkFunc           func,
     VoidFutureCallback commitCallback)
 {
     auto tr     = db.createTransaction();
