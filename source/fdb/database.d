@@ -148,22 +148,11 @@ auto doTransaction(
     VoidFutureCallback commitCallback)
 {
     auto tr     = db.createTransaction();
-    auto future = createFuture!doTransactionWorker(tr, func, commitCallback);
+    auto future = createFuture!retryLoop(tr, func, commitCallback);
     return future;
 };
 
-void doTransactionWorker(
-    shared Transaction tr,
-    WorkFunc           func,
-    CompletionCallback futureCompletionCallback)
-{
-    retryLoop(tr, func, (ex)
-    {
-        futureCompletionCallback(ex);
-    });
-}
-
-private void retryLoop(
+void retryLoop(
     shared Transaction tr,
     WorkFunc           func,
     VoidFutureCallback cb)
@@ -175,13 +164,16 @@ private void retryLoop(
             if (ex)
                 onError(tr, ex, func, cb);
             else
-                tr.commit((commitErr)
+            {
+                auto future = tr.commit((commitErr)
                 {
                     if (commitErr)
                         onError(tr, commitErr, func, cb);
                     else
                         cb(commitErr);
                 });
+                future.await;
+            }
         });
     }
     catch (Exception ex)
