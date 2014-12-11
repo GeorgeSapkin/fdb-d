@@ -59,12 +59,12 @@ shared class Database : IDisposable
     body
     {
         TransactionHandle th;
-        auto err          = fdb_database_create_transaction(
+        auto err = fdb_database_create_transaction(
             cast(DatabaseHandle)dbh,
             &th);
         enforceError(err);
 
-        auto tr           = new shared Transaction(th, this);
+        auto tr = new shared Transaction(th, this);
         synchronized (this)
             transactions ~= tr;
         return tr;
@@ -137,6 +137,23 @@ shared class Database : IDisposable
             value.toStringz,
             cast(int)value.length);
         enforceError(err);
+    }
+
+    auto opIndex(const Key key)
+    {
+        auto tr    = createTransaction();
+        auto f     = tr.get(key, false);
+        auto value = f.await;
+        tr.commit.await;
+        return value;
+    }
+
+    auto opIndexAssign(const Value value, const Key key)
+    {
+        auto tr = createTransaction();
+        tr.set(key, value);
+        tr.commit.await;
+        return value;
     }
 }
 
