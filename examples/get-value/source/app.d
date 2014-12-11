@@ -23,13 +23,8 @@ void main()
     auto key = "SomeKey".pack;
     try
     {
-        "Creating write transaction".writeln;
-        auto tr    = db.createTransaction;
-
         "Setting SomeKey to SomeValue".writeln;
-        auto value = "SomeValue".pack;
-        tr.set(key, value);
-        tr.commit.await;
+        db[key] = "SomeValue".pack;
     }
     catch (FDBException ex)
     {
@@ -38,20 +33,14 @@ void main()
 
     try
     {
-        "Creating read transaction".writeln;
-        auto tr     = db.createTransaction;
-
         "Reading from SomeKey".writeln;
-        auto f      = tr.get(key, false);
-        auto values = f.await.unpack;
+        auto values = db[key].unpack;
 
         if (!values.empty && values[0].isTypeOf!string)
         {
             auto value = values[0].get!string;
             ("Got " ~ value).writeln;
         }
-
-        tr.commit.await;
     }
     catch (FDBException ex)
     {
