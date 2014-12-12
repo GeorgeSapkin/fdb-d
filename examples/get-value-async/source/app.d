@@ -23,12 +23,11 @@ void main()
     try
     {
         "Creating write transaction".writeln;
-        auto tr    = db.createTransaction;
+        auto tr = db.createTransaction;
 
         "Setting SomeKey to SomeValue".writeln;
-        auto key   = "SomeKey".pack;
-        auto value = "SomeValue".pack;
-        tr.set(key, value);
+        auto key = "SomeKey".pack;
+        tr[key]  = "SomeValue".pack;
         tr.commit((ex)
         {
             if (ex)
@@ -39,7 +38,7 @@ void main()
             auto tr2 = db.createTransaction;
 
             "Reading from SomeKey".writeln;
-            auto f   = tr.get(key, false);
+            auto f = tr.get(key, false);
             f.await((ex2, value)
             {
                 if (ex2)

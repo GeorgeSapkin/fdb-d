@@ -30,11 +30,8 @@ void main()
         (tr, commitCallback)
         {
             "Setting values".writeln;
-            auto value1 = pack("SomeValue1");
-            tr.set(key1, value1);
-
-            auto value2 = pack("SomeValue2");
-            tr.set(key2, value2);
+            tr[key1] = pack("SomeValue1");
+            tr[key2] = pack("SomeValue2");
 
             "Committing set transaction".writeln;
             commitCallback(null);
