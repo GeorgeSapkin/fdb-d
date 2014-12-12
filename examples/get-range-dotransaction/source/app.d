@@ -51,7 +51,7 @@ void main()
         (tr, commitCallback)
         {
             "Getting [SomeKey1, SomeKey2] range".writeln;
-            auto f  = tr.getRangeInclusive(key1, key2);
+            auto f  = tr.getRange(rangeInclusive(key1, key2));
             f.forEach((Record record)
             {
                 "Got ".write;

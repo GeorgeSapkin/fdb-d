@@ -26,6 +26,8 @@ void main()
         "Creating write transaction".writeln;
         auto tr     = db.createTransaction;
 
+        "Setting values".writeln;
+
         auto prefix = "SomeKey";
 
         // packing key into a tuple
@@ -37,7 +39,6 @@ void main()
         auto key2   = pack(prefix, "2");
         auto value2 = pack("SomeValue2");
 
-        "Setting values".writeln;
         tr.set(key2, value2);
 
         tr.commit((ex)
@@ -46,7 +47,7 @@ void main()
             auto tr2 = db.createTransaction;
 
             "Getting [SomeKey1, SomeKey2] range".writeln;
-            auto f  = tr2.getRangeInclusive(key1, key2);
+            auto f  = tr2.getRange(rangeInclusive(key1, key2));
             f.forEach((Record record)
             {
                 "Got ".write;

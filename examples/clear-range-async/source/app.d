@@ -47,10 +47,10 @@ void main()
             auto tr2 = db.createTransaction;
 
             "Clearing set keys".writeln;
-            tr2.clearRangeStartsWith(prefix.pack);
+            tr2.clearRange(prefix.pack.range);
 
             "Trying to get [SomeKey1, SomeKey2] range".writeln;
-            auto f  = tr2.getRangeInclusive(key1, key2);
+            auto f  = tr2.getRange(rangeInclusive(key1, key2));
             f.forEach((Record record)
             {
                 // This shouldn't be hit
