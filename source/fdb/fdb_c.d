@@ -3,7 +3,7 @@ module fdb.fdb_c;
 import
     fdb.fdb_c_options;
 
-immutable uint FDB_API_VERSION = 200;
+immutable uint FDB_API_VERSION = 300;
 
 struct FDBCluster {}
 alias ClusterHandle     = FDBCluster *;

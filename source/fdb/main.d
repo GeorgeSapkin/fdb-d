@@ -18,7 +18,7 @@ import
 
 private shared auto networkStarted = false;
 
-private auto FBD_RUNTIME_API_VERSION = 200;
+private auto FBD_RUNTIME_API_VERSION = 300;
 
 shared static this()
 {
