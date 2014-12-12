@@ -17,15 +17,16 @@ import
     fdb.networkoptions;
 
 private shared auto networkStarted = false;
+private shared bool apiSelected    = false;
 
-private auto FBD_RUNTIME_API_VERSION = 300;
+private auto FBD_RUNTIME_API_VERSION = 200;
 
-shared static this()
+void selectAPIVersion(const int apiVersion)
+in
 {
-    selectAPIVersion(FBD_RUNTIME_API_VERSION);
+    enforce(!apiSelected, "API version already selected");
 }
-
-private void selectAPIVersion(const int apiVersion)
+body
 {
     auto err = fdb_select_api_version(apiVersion);
     enforceError(err);
@@ -50,6 +51,9 @@ in
 body
 {
     if (networkStarted) return;
+
+    if (!apiSelected)
+        selectAPIVersion(FBD_RUNTIME_API_VERSION);
 
     NetworkOptions.init;
     auto err       = fdb_setup_network();
