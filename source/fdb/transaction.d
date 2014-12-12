@@ -16,10 +16,55 @@ import
     fdb.range,
     fdb.rangeinfo;
 
-shared class Transaction : IDirect, IDisposable
+shared interface IReadOnlyTransaction
+{
+    @property bool isSnapshot();
+
+    shared(KeyFuture) getKey(
+        const Selector    selector,
+        KeyFutureCallback callback = null);
+
+    shared(ValueFuture) get(
+        const Key           key,
+        ValueFutureCallback callback = null);
+
+    /**
+     * Returns: Key-value pairs within (begin, end) range
+     */
+    shared(KeyValueFuture) getRange(
+        RangeInfo              info,
+        KeyValueFutureCallback callback = null);
+
+    void addReadConflictRange(RangeInfo info);
+    void addWriteConflictRange(RangeInfo info);
+
+    shared(VoidFuture) onError(
+        const FDBException ex,
+        VoidFutureCallback callback = null);
+
+    shared(VersionFuture) getReadVersion(VersionFutureCallback callback = null);
+
+    long getCommittedVersion();
+
+    shared(StringFuture) getAddressesForKey(
+        const Key            key,
+        StringFutureCallback callback = null);
+
+    shared(Value) opIndex(const Key key);
+
+    RecordRange opIndex(RangeInfo info);
+}
+
+shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
 {
     private const Database    db;
     private TransactionHandle th;
+    private const bool _isSnapshot;
+
+    @property bool isSnapshot()
+    {
+        return _isSnapshot;
+    }
 
     private IDisposable[] futures;
 
@@ -28,7 +73,9 @@ shared class Transaction : IDirect, IDisposable
         assert(db !is null);
     }
 
-    this(TransactionHandle th, const shared Database db)
+    this(
+        TransactionHandle     th,
+        const shared Database db)
     in
     {
         enforce(db !is null, "db must be set");
@@ -36,8 +83,36 @@ shared class Transaction : IDirect, IDisposable
     }
     body
     {
-        this.th = cast(shared)th;
-        this.db = db;
+        this.th          = cast(shared)th;
+        this.db          = db;
+        this._isSnapshot = false;
+    }
+
+    invariant()
+    {
+        assert(db !is null);
+    }
+
+    private this(
+        shared TransactionHandle th,
+        const shared Database    db,
+        const bool               isSnapshot)
+    in
+    {
+        enforce(db !is null, "db must be set");
+        enforce(th !is null, "th must be set");
+    }
+    body
+    {
+        this.th          = cast(shared)th;
+        this.db          = db;
+        this._isSnapshot = isSnapshot;
+    }
+
+    @property shared(IReadOnlyTransaction) snapshot()
+    {
+        auto snapshot = new shared Transaction(th, db, true);
+        return cast(shared IReadOnlyTransaction)snapshot;
     }
 
     ~this()
@@ -47,7 +122,8 @@ shared class Transaction : IDirect, IDisposable
 
     void dispose()
     {
-        if (!th) return;
+        // parent transaction should handle destruction
+        if (!th || isSnapshot) return;
 
         fdb_transaction_destroy(cast(TransactionHandle)th);
         th = null;
@@ -130,9 +206,8 @@ shared class Transaction : IDirect, IDisposable
             cast(int)info.end.key.length);
     }
 
-    auto getKey(
+    shared(KeyFuture) getKey(
         const Selector    selector,
-        const bool        snapshot,
         KeyFutureCallback callback = null)
     {
         auto fh = fdb_transaction_get_key(
@@ -141,7 +216,7 @@ shared class Transaction : IDirect, IDisposable
             cast(int)selector.key.length,
             cast(fdb_bool_t)selector.orEqual,
             selector.offset,
-            cast(fdb_bool_t)snapshot);
+            cast(fdb_bool_t)_isSnapshot);
 
         auto future = startOrCreateFuture!KeyFuture(fh, this, callback);
         synchronized (this)
@@ -149,9 +224,8 @@ shared class Transaction : IDirect, IDisposable
         return future;
     }
 
-    auto get(
+    shared(ValueFuture) get(
         const Key           key,
-        const bool          snapshot,
         ValueFutureCallback callback = null)
     in
     {
@@ -164,7 +238,7 @@ shared class Transaction : IDirect, IDisposable
             cast(TransactionHandle)th,
             &key[0],
             cast(int)key.length,
-            snapshot);
+            cast(fdb_bool_t)_isSnapshot);
 
         auto future = startOrCreateFuture!ValueFuture(fh, this, callback);
         synchronized (this)
@@ -175,7 +249,7 @@ shared class Transaction : IDirect, IDisposable
     /**
      * Returns: Key-value pairs within (begin, end) range
      */
-    auto getRange(
+    shared(KeyValueFuture) getRange(
         RangeInfo              info,
         KeyValueFutureCallback callback = null)
     {
@@ -199,7 +273,7 @@ shared class Transaction : IDirect, IDisposable
             0,
             info.mode,
             info.iteration,
-            info.snapshot,
+            cast(fdb_bool_t)_isSnapshot,
             info.reverse);
 
         auto future = startOrCreateFuture!KeyValueFuture(
@@ -257,7 +331,7 @@ shared class Transaction : IDirect, IDisposable
         addConflictRange(info, ConflictRangeType.WRITE);
     }
 
-    auto onError(
+    shared(VoidFuture) onError(
         const FDBException ex,
         VoidFutureCallback callback = null)
     {
@@ -282,7 +356,7 @@ shared class Transaction : IDirect, IDisposable
             ver);
     }
 
-    auto getReadVersion(VersionFutureCallback callback = null)
+    shared(VersionFuture) getReadVersion(VersionFutureCallback callback = null)
     {
         auto fh = fdb_transaction_get_read_version(
             cast(TransactionHandle)th);
@@ -292,7 +366,7 @@ shared class Transaction : IDirect, IDisposable
         return future;
     }
 
-    auto getCommittedVersion() const
+    long getCommittedVersion() const
     {
         long ver;
         auto err = fdb_transaction_get_committed_version(
@@ -302,7 +376,7 @@ shared class Transaction : IDirect, IDisposable
         return ver;
     }
 
-    auto getAddressesForKey(
+    shared(StringFuture) getAddressesForKey(
         const Key            key,
         StringFutureCallback callback = null)
     in
@@ -598,7 +672,7 @@ shared class Transaction : IDirect, IDisposable
 
     shared(Value) opIndex(const Key key)
     {
-        auto f     = get(key, false);
+        auto f     = get(key);
         auto value = f.await;
         return value;
     }

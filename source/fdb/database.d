@@ -145,8 +145,7 @@ shared class Database : IDirect, IDisposable
     shared(Value) opIndex(const Key key)
     {
         auto tr    = createTransaction();
-        auto f     = tr.get(key, false);
-        auto value = f.await;
+        auto value = tr[key];
         tr.commit.await;
         return value;
     }
@@ -154,8 +153,7 @@ shared class Database : IDirect, IDisposable
     RecordRange opIndex(RangeInfo info)
     {
         auto tr    = createTransaction();
-        auto f     = tr.getRange(info);
-        auto value = cast(RecordRange)f.await;
+        auto value = cast(RecordRange)tr[info];
         tr.commit.await;
         return value;
     }
@@ -163,7 +161,7 @@ shared class Database : IDirect, IDisposable
     inout(Value) opIndexAssign(inout(Value) value, const Key key)
     {
         auto tr = createTransaction();
-        tr.set(key, value);
+        tr[key] = value;
         tr.commit.await;
         return value;
     }

@@ -22,7 +22,6 @@ struct RangeInfo
     int           limit;
     StreamingMode mode;
     int           iteration;
-    bool          snapshot;
     bool          reverse;
 }
 
@@ -58,7 +57,6 @@ auto createRangeInfo(
         const Key           end       = null,
         const int           limit     = 0,
         const StreamingMode mode      = StreamingMode.ITERATOR,
-        const bool          snapshot  = false,
         const bool          reverse   = false,
         const int           iteration = 1)
 {
@@ -69,7 +67,7 @@ auto createRangeInfo(
     auto endSel   = sanEnd.firstGreaterOrEqual;
 
     auto rangeInfo = RangeInfo(
-            beginSel, endSel, limit, mode, iteration, snapshot, reverse);
+            beginSel, endSel, limit, mode, iteration, reverse);
     return rangeInfo;
 }
 
@@ -78,7 +76,6 @@ auto createRangeInfoInclusive(
         const Key           end       = null,
         const int           limit     = 0,
         const StreamingMode mode      = StreamingMode.ITERATOR,
-        const bool          snapshot  = false,
         const bool          reverse   = false,
         const int           iteration = 1)
 {
@@ -89,7 +86,7 @@ auto createRangeInfoInclusive(
     auto endSel   = sanEnd.firstGreaterThan;
 
     auto rangeInfo = RangeInfo(
-            beginSel, endSel, limit, mode, iteration, snapshot, reverse);
+            beginSel, endSel, limit, mode, iteration, reverse);
     return rangeInfo;
 }
 
@@ -98,12 +95,11 @@ auto createRangeInfo(
         Selector            endSel,
         const int           limit     = 0,
         const StreamingMode mode      = StreamingMode.ITERATOR,
-        const bool          snapshot  = false,
         const bool          reverse   = false,
         const int           iteration = 1)
 {
     auto rangeInfo = RangeInfo(
-            beginSel, endSel, limit, mode, iteration, snapshot, reverse);
+            beginSel, endSel, limit, mode, iteration, reverse);
     return rangeInfo;
 }
 
