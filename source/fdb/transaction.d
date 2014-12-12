@@ -112,43 +112,28 @@ shared class Transaction : IDisposable
             cast(int)key.length);
     }
 
-    void clearRange(const Key begin, const Key end) const
+    void clearRange(const RangeInfo info) const
     in
     {
-        enforce(begin !is null);
-        enforce(!begin.empty);
-        enforce(end !is null);
-        enforce(!end.empty);
+        enforce(!info.begin.key.empty);
+        enforce(!info.end.key.empty);
     }
     body
     {
         fdb_transaction_clear_range(
             cast(TransactionHandle)th,
-            &begin[0],
-            cast(int)begin.length,
-            &end[0],
-            cast(int)end.length);
-    }
-
-    auto clearRangeStartsWith(const Key prefix) const
-    in
-    {
-        enforce(prefix !is null);
-        enforce(!prefix.empty);
-    }
-    body
-    {
-        auto begin = prefix;
-        auto end   = prefix.getEndPrefix;
-        clearRange(begin, end);
+            &info.begin.key[0],
+            cast(int)info.begin.key.length,
+            &info.end.key[0],
+            cast(int)info.end.key.length);
     }
 
     auto getKey(
-        const Selector      selector,
-        const bool          snapshot,
-        KeyFutureCallback   callback = null)
+        const Selector    selector,
+        const bool        snapshot,
+        KeyFutureCallback callback = null)
     {
-        auto fh      = fdb_transaction_get_key(
+        auto fh = fdb_transaction_get_key(
             cast(TransactionHandle)th,
             &selector.key[0],
             cast(int)selector.key.length,
@@ -156,7 +141,7 @@ shared class Transaction : IDisposable
             selector.offset,
             cast(fdb_bool_t)snapshot);
 
-        auto future  = startOrCreateFuture!KeyFuture(fh, this, callback);
+        auto future = startOrCreateFuture!KeyFuture(fh, this, callback);
         synchronized (this)
             futures ~= future;
         return future;
@@ -173,26 +158,29 @@ shared class Transaction : IDisposable
     }
     body
     {
-        auto fh      = fdb_transaction_get(
+        auto fh = fdb_transaction_get(
             cast(TransactionHandle)th,
             &key[0],
             cast(int)key.length,
             snapshot);
 
-        auto future  = startOrCreateFuture!ValueFuture(fh, this, callback);
+        auto future = startOrCreateFuture!ValueFuture(fh, this, callback);
         synchronized (this)
             futures ~= future;
         return future;
     }
 
+    /**
+     * Returns: Key-value pairs within (begin, end) range
+     */
     auto getRange(
-        RangeInfo               info,
-        KeyValueFutureCallback  callback = null)
+        RangeInfo              info,
+        KeyValueFutureCallback callback = null)
     {
-        auto begin = sanitizeKey!0x00(info.begin.key);
-        auto end   = sanitizeKey!0xff(info.end.key);
+        auto begin = sanitizeKey(info.begin.key, [ 0x00 ]);
+        auto end   = sanitizeKey(info.end.key, [ 0xff ]);
 
-        auto fh    = fdb_transaction_get_range(
+        auto fh = fdb_transaction_get_range(
             cast(TransactionHandle)cast(TransactionHandle)th,
 
             &begin[0],
@@ -212,85 +200,11 @@ shared class Transaction : IDisposable
             info.snapshot,
             info.reverse);
 
-        auto future  = startOrCreateFuture!KeyValueFuture(
+        auto future = startOrCreateFuture!KeyValueFuture(
             fh, this, info, callback);
         synchronized (this)
             futures ~= future;
         return future;
-    }
-
-    /**
-     * Returns: Key-value pairs within (begin, end) range with boundaries
-     *          included depending on the selectors
-     */
-    auto getRange(
-        Selector                begin,
-        Selector                end,
-        const int               limit       = 0,
-        const StreamingMode     mode        = StreamingMode.ITERATOR,
-        const bool              snapshot    = false,
-        const bool              reverse     = false,
-        const int               iteration   = 1,
-        KeyValueFutureCallback  callback    = null)
-    {
-        auto info = RangeInfo(
-            begin, end, limit, mode, iteration, snapshot, reverse);
-        return getRange(info, callback);
-    }
-
-    /**
-     * Returns: Key-value pairs within [begin, end) range
-     */
-    auto getRange(
-        const Key               begin,
-        const Key               end,
-        const int               limit       = 0,
-        const StreamingMode     mode        = StreamingMode.ITERATOR,
-        const bool              snapshot    = false,
-        const bool              reverse     = false,
-        const int               iteration   = 1,
-        KeyValueFutureCallback  callback    = null)
-    {
-        auto beginSel = begin.firstGreaterOrEqual;
-        auto endSel   = end.firstGreaterOrEqual;
-        return getRange(
-            beginSel, endSel, limit, mode, snapshot, reverse, iteration,
-            callback);
-    }
-
-    /**
-     * Returns: Key-value pairs within [begin, end] range
-     */
-    auto getRangeInclusive(
-        const Key               begin,
-        const Key               end,
-        const int               limit       = 0,
-        const StreamingMode     mode        = StreamingMode.ITERATOR,
-        const bool              snapshot    = false,
-        const bool              reverse     = false,
-        const int               iteration   = 1,
-        KeyValueFutureCallback  callback    = null)
-    {
-        auto beginSel = begin.firstGreaterOrEqual;
-        auto endSel   = end.firstGreaterThan;
-        return getRange(
-            beginSel, endSel, limit, mode, snapshot, reverse, iteration,
-            callback);
-    }
-
-    auto getRangeStartsWith(
-        const Key               prefix,
-        const int               limit       = 0,
-        const StreamingMode     mode        = StreamingMode.ITERATOR,
-        const bool              snapshot    = false,
-        const bool              reverse     = false,
-        const int               iteration   = 1,
-        KeyValueFutureCallback  callback    = null)
-    {
-        auto begin = sanitizeKey!0x00(prefix);
-        auto end   = sanitizeKey!0xff(prefix).getEndPrefix;
-        return getRange(
-            begin, end, limit, mode, snapshot, reverse, iteration, callback);
     }
 
     auto watch(const Key key, VoidFutureCallback callback = null)
@@ -301,57 +215,54 @@ shared class Transaction : IDisposable
     }
     body
     {
-        auto fh      = fdb_transaction_watch(
+        auto fh = fdb_transaction_watch(
             cast(TransactionHandle)th,
             &key[0],
             cast(int)key.length);
-        auto future  = startOrCreateFuture!WatchFuture(fh, this, callback);
+        auto future = startOrCreateFuture!WatchFuture(fh, this, callback);
         synchronized (this)
             futures ~= future;
         return future;
     }
 
     private void addConflictRange(
-        const Key               begin,
-        const Key               end,
+        RangeInfo               info,
         const ConflictRangeType type) const
     in
     {
-        enforce(begin !is null);
-        enforce(!begin.empty);
-        enforce(end !is null);
-        enforce(!end.empty);
+        enforce(!info.begin.key.empty);
+        enforce(!info.end.key.empty);
     }
     body
     {
         auto err = fdb_transaction_add_conflict_range(
             cast(TransactionHandle)th,
-            &begin[0],
-            cast(int)begin.length,
-            &end[0],
-            cast(int)end.length,
+            &info.begin.key[0],
+            cast(int)info.begin.key.length,
+            &info.end.key[0],
+            cast(int)info.end.key.length,
             type);
         enforceError(err);
     }
 
-    void addReadConflictRange(const Key begin, const Key end) const
+    void addReadConflictRange(RangeInfo info) const
     {
-        addConflictRange(begin, end, ConflictRangeType.READ);
+        addConflictRange(info, ConflictRangeType.READ);
     }
 
-    void addWriteConflictRange(const Key begin, const Key end) const
+    void addWriteConflictRange(RangeInfo info) const
     {
-        addConflictRange(begin, end, ConflictRangeType.WRITE);
+        addConflictRange(info, ConflictRangeType.WRITE);
     }
 
     auto onError(
-        const FDBException  ex,
-        VoidFutureCallback  callback = null)
+        const FDBException ex,
+        VoidFutureCallback callback = null)
     {
-        auto fh      = fdb_transaction_on_error(
+        auto fh = fdb_transaction_on_error(
             cast(TransactionHandle)th,
             ex.err);
-        auto future  = startOrCreateFuture!VoidFuture(fh, this, callback);
+        auto future = startOrCreateFuture!VoidFuture(fh, this, callback);
         synchronized (this)
             futures ~= future;
         return future;
@@ -371,9 +282,9 @@ shared class Transaction : IDisposable
 
     auto getReadVersion(VersionFutureCallback callback = null)
     {
-        auto fh      = fdb_transaction_get_read_version(
+        auto fh = fdb_transaction_get_read_version(
             cast(TransactionHandle)th);
-        auto future  = startOrCreateFuture!VersionFuture(fh, this, callback);
+        auto future = startOrCreateFuture!VersionFuture(fh, this, callback);
         synchronized (this)
             futures ~= future;
         return future;
@@ -390,8 +301,8 @@ shared class Transaction : IDisposable
     }
 
     auto getAddressesForKey(
-        const Key               key,
-        StringFutureCallback    callback = null)
+        const Key            key,
+        StringFutureCallback callback = null)
     in
     {
         enforce(key !is null);
@@ -399,12 +310,12 @@ shared class Transaction : IDisposable
     }
     body
     {
-        auto fh      = fdb_transaction_get_addresses_for_key(
+        auto fh = fdb_transaction_get_addresses_for_key(
             cast(TransactionHandle)th,
             &key[0],
             cast(int)key.length);
 
-        auto future  = startOrCreateFuture!StringFuture(fh, this, callback);
+        auto future = startOrCreateFuture!StringFuture(fh, this, callback);
         synchronized (this)
             futures ~= future;
         return future;
@@ -474,9 +385,9 @@ shared class Transaction : IDisposable
     }
 
     private void callAtomicOperation(
-        const Key           key,
-        const Value         value,
-        const MutationType  type) const
+        const Key          key,
+        const Value        value,
+        const MutationType type) const
     in
     {
         enforce(key !is null);
@@ -682,32 +593,4 @@ shared class Transaction : IDisposable
             cast(int)value.sizeof);
         enforceError(err);
     }
-}
-
-private auto sanitizeKey(alias fallback)(const Key key) pure
-{
-    if (key is null || key.empty)
-        return [ cast(ubyte) fallback ];
-    return key;
-}
-
-private auto getEndPrefix(const Key prefix) pure
-in
-{
-    enforce(prefix !is null);
-    enforce(prefix.length > 0);
-}
-body
-{
-    ulong i = prefix.length;
-    if (i == 1) return [ cast(ubyte) 0xff ];
-
-    do --i;
-    while (i != 0 && prefix[i] == 0xff);
-
-    enforce(prefix[i] != 0xff, "All prefix bytes cannot equal 0xff");
-
-    auto endPrefix = prefix[0 .. i + 1].dup;
-    ++endPrefix[i];
-    return endPrefix;
 }
