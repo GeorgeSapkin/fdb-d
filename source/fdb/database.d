@@ -7,6 +7,7 @@ import
 
 import
     fdb.cluster,
+    fdb.direct,
     fdb.disposable,
     fdb.error,
     fdb.fdb_c,
@@ -16,7 +17,7 @@ import
     fdb.rangeinfo,
     fdb.transaction;
 
-shared class Database : IDisposable
+shared class Database : IDirect, IDisposable
 {
     private const Cluster  cluster;
     private DatabaseHandle dbh;
@@ -141,7 +142,7 @@ shared class Database : IDisposable
         enforceError(err);
     }
 
-    auto opIndex(const Key key)
+    shared(Value) opIndex(const Key key)
     {
         auto tr    = createTransaction();
         auto f     = tr.get(key, false);
@@ -150,7 +151,7 @@ shared class Database : IDisposable
         return value;
     }
 
-    auto opIndex(RangeInfo info)
+    RecordRange opIndex(RangeInfo info)
     {
         auto tr    = createTransaction();
         auto f     = tr.getRange(info);
@@ -159,7 +160,7 @@ shared class Database : IDisposable
         return value;
     }
 
-    auto opIndexAssign(const Value value, const Key key)
+    inout(Value) opIndexAssign(inout(Value) value, const Key key)
     {
         auto tr = createTransaction();
         tr.set(key, value);

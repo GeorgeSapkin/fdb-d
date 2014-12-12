@@ -7,14 +7,16 @@ import
 
 import
     fdb.database,
+    fdb.direct,
     fdb.disposable,
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,
     fdb.future,
+    fdb.range,
     fdb.rangeinfo;
 
-shared class Transaction : IDisposable
+shared class Transaction : IDirect, IDisposable
 {
     private const Database    db;
     private TransactionHandle th;
@@ -592,5 +594,25 @@ shared class Transaction : IDisposable
             cast(immutable(char)*)&value,
             cast(int)value.sizeof);
         enforceError(err);
+    }
+
+    shared(Value) opIndex(const Key key)
+    {
+        auto f     = get(key, false);
+        auto value = f.await;
+        return value;
+    }
+
+    RecordRange opIndex(RangeInfo info)
+    {
+        auto f     = getRange(info);
+        auto value = cast(RecordRange)f.await;
+        return value;
+    }
+
+    inout(Value) opIndexAssign(inout(Value) value, const Key key)
+    {
+        set(key, value);
+        return value;
     }
 }
