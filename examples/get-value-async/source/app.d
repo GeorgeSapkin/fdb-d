@@ -38,7 +38,7 @@ void main()
             auto tr2 = db.createTransaction;
 
             "Reading from SomeKey".writeln;
-            auto f = tr.get(key, false);
+            auto f = tr.get(key);
             f.await((ex2, value)
             {
                 if (ex2)
