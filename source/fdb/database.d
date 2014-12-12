@@ -12,6 +12,8 @@ import
     fdb.fdb_c,
     fdb.fdb_c_options,
     fdb.future,
+    fdb.range,
+    fdb.rangeinfo,
     fdb.transaction;
 
 shared class Database : IDisposable
@@ -144,6 +146,15 @@ shared class Database : IDisposable
         auto tr    = createTransaction();
         auto f     = tr.get(key, false);
         auto value = f.await;
+        tr.commit.await;
+        return value;
+    }
+
+    auto opIndex(RangeInfo info)
+    {
+        auto tr    = createTransaction();
+        auto f     = tr.getRange(info);
+        auto value = cast(RecordRange)f.await;
         tr.commit.await;
         return value;
     }
