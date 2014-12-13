@@ -1,31 +1,16 @@
 language: d
 
-#compiler:
-#  - dmd
-
 install:
-  # dmd
-  - DMD_VER=2.066.1
-  - DMD=dmd_${DMD_VER}-0_amd64.deb
-  # dub
-  - DUB_VER=0.9.22
-  - DUB=dub-${DUB_VER}-linux-x86_64
   # fdb
-  - FDB_VER=2.0.10
+  - FDB_VER=3.0.4
   - FDB=foundationdb-clients_${FDB_VER}-1_amd64.deb
   - sudo apt-get -y update || true
   - sudo apt-get -fy install || true
-  # get dmd
-  - wget http://downloads.dlang.org/releases/2014/${DMD}
-  - sudo dpkg -i ${DMD} || true
   # get fdb
   - wget https://foundationdb.com/downloads/I_accept_the_FoundationDB_Community_License_Agreement/key-value-store/${FDB_VER}/${FDB}
   - sudo dpkg -i ${FDB} || true
-  # get dub
-  - wget http://code.dlang.org/files/${DUB}.tar.gz
-  - sudo tar -C /usr/local/bin -zxf ${DUB}.tar.gz
 
 script:
-  # - dub test
+  - dub test
   - for ex in `\ls -1 examples/`; do (echo "[INFO] Building example $ex"; cd examples/$ex && dub build) || exit 1; done
   # - for ex in `\ls -1 tests/`; do (echo "[INFO] Running test $ex"; cd tests/$ex && dub) || exit 1; done
