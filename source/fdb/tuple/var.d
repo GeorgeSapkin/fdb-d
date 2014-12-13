@@ -87,14 +87,14 @@ struct FDBVariant
 
     private auto getInt() const
     {
-        long value;
+        long  value;
         ubyte shift;
-        ulong pos;
+        ubyte pos;
 
         const auto bits = type.FDBsizeof * 8;
         while (shift < bits)
         {
-            value |= slice[pos] << shift;
+            value |= cast(long)slice[pos] << shift;
             // TODO: use one counter?
             ++pos;
             shift += 8;
