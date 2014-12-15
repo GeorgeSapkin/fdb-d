@@ -106,7 +106,7 @@ auto createRangeInfo(
 alias range          = createRangeInfo;
 alias rangeInclusive = createRangeInfoInclusive;
 
-auto sanitizeKey(const Key key, const Key fallback) pure
+auto sanitizeKey(const Key key, lazy Key fallback) pure
 {
     if (key is null || key.empty)
         return fallback;
