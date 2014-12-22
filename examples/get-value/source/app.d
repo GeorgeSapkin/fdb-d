@@ -33,14 +33,13 @@ void main()
 
     try
     {
-        "Reading from SomeKey".writeln;
+        "SomeKey = ".write;
         auto values = db[key].unpack;
 
-        if (!values.empty && values[0].isTypeOf!string)
-        {
-            auto value = values[0].get!string;
-            ("Got " ~ value).writeln;
-        }
+        if (!values.empty)
+            if (auto value = values[0].peek!string)
+                (*value).write;
+        writeln;
     }
     catch (FDBException ex)
     {

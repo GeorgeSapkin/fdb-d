@@ -8,16 +8,24 @@ import
     fdb.tuple.tupletype,
     fdb.tuple.var;
 
-auto unpack(Range)(Range bytes) if (isInputRange!(Unqual!Range))
+auto unpack(Range)(Range bytes)
+if (isInputRange!(Unqual!Range))
 {
     ulong pos = 0;
-    FDBTuple variants;
+    Part[] parts;
     while (pos < bytes.length)
     {
         auto marker = cast(TupleType)bytes[pos++];
-        auto var = variant(marker, bytes, pos);
-        pos += var.size;
-        variants ~= var;
+        auto var    = variant(marker, bytes, pos);
+
+        Part part;
+        if (var.isTypeOf!long)
+            part = var.get!long;
+        else if (var.isTypeOf!string)
+            part = var.get!string;
+
+        parts ~= part;
+        pos   += var.size;
     }
-    return variants;
+    return parts;
 }

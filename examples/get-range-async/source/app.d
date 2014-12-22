@@ -2,6 +2,7 @@ import
     std.algorithm,
     std.array,
     std.c.stdlib,
+    std.conv,
     std.stdio;
 
 import
@@ -27,8 +28,8 @@ void main()
         auto tr = db.createTransaction;
 
         auto prefix = "SomeKey";
-        auto key1   = pack(prefix, "1");
-        auto key2   = pack(prefix, "2");
+        auto key1   = pack(prefix, 1);
+        auto key2   = pack(prefix, 2);
 
         "Setting values".writeln;
         tr[key1]  = pack("SomeValue1");
@@ -47,9 +48,7 @@ void main()
                 auto keyVars = record.key.unpack;
                 if (!keyVars.empty)
                 {
-                    auto key = reduce!
-                        ((a, b) => b.isTypeOf!string ? a ~ b.get!string : a)
-                        ("", keyVars);
+                    auto key = reduce!aggregate("", keyVars);
                     key.write;
                 }
                 else
@@ -59,9 +58,7 @@ void main()
                 auto valueVars = record.value.unpack;
                 if (!valueVars.empty)
                 {
-                    auto value = reduce!
-                        ((a, b) => b.isTypeOf!string ? a ~ b.get!string : a)
-                        ("", valueVars);
+                    auto value = reduce!aggregate("", valueVars);
                     value.write;
                 }
                 else
@@ -94,4 +91,16 @@ void handleException(E)(E ex)
     "Stopping network".writeln;
     fdb.close;
     exit(1);
+}
+
+auto aggregate(A, B)(A a, B b)
+{
+    string r;
+    if (auto v = b.peek!long)
+        r = (*v).to!string;
+    else if (auto v = b.peek!string)
+        r = *v;
+    if (a.empty)
+        return r;
+    return a ~ "." ~ r;
 }

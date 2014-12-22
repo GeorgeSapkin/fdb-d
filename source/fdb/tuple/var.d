@@ -11,8 +11,6 @@ import
 import
     fdb.tuple.tupletype;
 
-alias FDBTuple = FDBVariant[];
-
 struct FDBVariant
 {
     const TupleType type;

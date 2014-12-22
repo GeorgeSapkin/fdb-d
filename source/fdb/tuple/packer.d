@@ -49,6 +49,15 @@ private class Packer
             write(e);
         }
     }
+
+    void write(const Part part)
+    {
+        if (auto v = part.peek!long)
+            write(*v);
+        else if (auto v = part.peek!string)
+            write(*v);
+        // there is no else part because Part can only be long or string
+    }
 }
 
 auto pack(T...)(T parts)

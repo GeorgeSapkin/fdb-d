@@ -43,15 +43,14 @@ void main()
             {
                 if (ex2)
                     ex2.handleException;
-                "Received values".writeln;
 
+                "SomeKey = ".write;
                 auto values = value.unpack;
 
-                if (!values.empty && values[0].isTypeOf!string)
-                {
-                    auto val = values[0].get!string;
-                    ("Got " ~ val).writeln;
-                }
+                if (!values.empty)
+                    if (auto v = values[0].peek!string)
+                        (*v).write;
+                writeln;
 
                 tr2.commit((ex3)
                 {
