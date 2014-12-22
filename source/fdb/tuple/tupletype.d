@@ -1,10 +1,7 @@
 module fdb.tuple.tupletype;
 
 import
-    std.exception,
-    std.variant;
-
-alias Part = Algebraic!(long, string);
+    std.exception;
 
 enum TupleType : ubyte {
     /**

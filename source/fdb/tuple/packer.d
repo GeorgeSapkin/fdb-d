@@ -8,6 +8,7 @@ import
 
 import
     fdb.tuple.integral,
+    fdb.tuple.part,
     fdb.tuple.tupletype;
 
 private class Packer

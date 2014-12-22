@@ -5,6 +5,7 @@ import
     std.traits;
 
 import
+    fdb.tuple.part,
     fdb.tuple.tupletype,
     fdb.tuple.var;
 
