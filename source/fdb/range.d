@@ -28,6 +28,7 @@ struct RecordRange
     private bool               _more;
     private shared Transaction tr;
     private Key                end;
+    private ulong              index;
 
     @property auto more() const pure @nogc
     {
@@ -67,6 +68,7 @@ struct RecordRange
     auto popFront()
     {
         records = records[1 .. $];
+        ++index;
         if (empty && more)
             fetchNextBatch;
     }
@@ -78,11 +80,14 @@ struct RecordRange
 
     private void fetchNextBatch()
     {
-        if (!end)
+        if (!end || index == info.limit)
         {
             _more = false;
             return;
         }
+
+        if (info.limit > 0)
+            info.limit -= index;
 
         info.iteration++;
 
