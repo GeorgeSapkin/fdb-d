@@ -85,20 +85,25 @@ struct FDBVariant
 
     private auto getInt() const
     {
-        long  value;
-        ubyte shift;
+        ulong dbValue;
         ubyte pos;
 
-        const auto bits = type.FDBsizeof * 8;
-        while (shift < bits)
+        const auto size = type.FDBsizeof;
+        while (pos < size)
         {
-            value |= cast(long)slice[pos] << shift;
-            // TODO: use one counter?
+            dbValue |= cast(long)slice[pos] << (pos << 3);
             ++pos;
-            shift += 8;
         }
+
+        long value;
         if (type < TupleType.IntBase)
-            value = -value;
+        {
+            value  = -(~dbValue);
+            if (size < long.sizeof)
+                value |= (-1L << (size << 3));
+        }
+        else
+            value = dbValue;
         return value;
     }
 

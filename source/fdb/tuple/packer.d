@@ -28,11 +28,12 @@ private class Packer
             cast(ubyte)(TupleType.IntBase + ((value > 0) ? size : -size));
         bytes ~= marker;
 
-        ulong compliment = (value > 0) ? value : -value;
-        while (compliment != 0)
+        ulong compliment = (value > 0) ? value : ~(-value);
+        while (size != 0)
         {
             bytes ~= compliment & 0xff;
             compliment >>= 8;
+            --size;
         }
     }
 
