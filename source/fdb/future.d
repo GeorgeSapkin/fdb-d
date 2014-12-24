@@ -161,7 +161,7 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
             start(callbackFunc);
 
         shared err = fdb_future_block_until_ready(cast(FutureHandle)fh);
-        if (err != FDBError.NONE)
+        if (err != FDBError.SUCCESS)
         {
             exception = cast(shared)err.toException;
             enforce(exception is null, cast(Exception)exception);
@@ -243,7 +243,7 @@ shared class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
             &valuePresent,
             &value,
             &valueLength);
-        if (err != FDBError.NONE || !valuePresent)
+        if (err != FDBError.SUCCESS || !valuePresent)
             return null;
         return value[0..valueLength];
     }
@@ -266,7 +266,7 @@ shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
             cast(FutureHandle)fh,
             &key,
             &keyLength);
-        if (err != FDBError.NONE)
+        if (err != FDBError.SUCCESS)
             return typeof(return).init;
         return key[0..keyLength];
     }
@@ -317,7 +317,7 @@ shared class KeyValueFuture
             &kvs,
             &len,
             &more);
-        if (err != FDBError.NONE)
+        if (err != FDBError.SUCCESS)
             return typeof(return).init;
 
         auto records = minimallyInitializedArray!(Record[])(len);
@@ -384,7 +384,7 @@ shared class VersionFuture : FDBFutureBase!(VersionFutureCallback, ulong)
         err = fdb_future_get_version(
             cast(FutureHandle)fh,
             &ver);
-        if (err != FDBError.NONE)
+        if (err != FDBError.SUCCESS)
             return typeof(return).init;
         return ver;
     }
@@ -404,7 +404,7 @@ shared class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
             cast(FutureHandle)fh,
             &stringArr,
             &count);
-        if (err != FDBError.NONE)
+        if (err != FDBError.SUCCESS)
             return typeof(return).init;
         auto strings = stringArr[0..count].map!(to!string).array;
         return strings;
