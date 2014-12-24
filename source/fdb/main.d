@@ -19,7 +19,7 @@ import
 private shared auto networkStarted = false;
 private shared bool apiSelected    = false;
 
-private auto FBD_RUNTIME_API_VERSION = 200;
+private auto FBD_RUNTIME_API_VERSION = FDB_API_VERSION;
 
 void selectAPIVersion(const int apiVersion)
 in
