@@ -5,8 +5,7 @@ import
     std.exception,
     std.range,
     std.string,
-    std.traits,
-    std.typecons;
+    std.traits;
 
 import
     fdb.tuple.segmented,
