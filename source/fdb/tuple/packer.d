@@ -9,6 +9,7 @@ import
 import
     fdb.tuple.integral,
     fdb.tuple.part,
+    fdb.tuple.segmented,
     fdb.tuple.tupletype;
 
 private class Packer
@@ -17,24 +18,23 @@ private class Packer
 
     void write(T)(const T value)
     if (isIntegral!T)
+    in
     {
         enforce(value >= long.min,
             "Value cannot exceed minumum 64-bit signed integer");
         enforce(value <= long.max,
             "Value cannot exceed maximum 64-bit signed integer");
-
-        auto size = value.minsizeof;
+    }
+    body
+    {
+        auto size   = value.minsizeof;
         auto marker =
             cast(ubyte)(TupleType.IntBase + ((value > 0) ? size : -size));
-        bytes ~= marker;
 
         ulong compliment = (value > 0) ? value : ~(-value);
-        while (size != 0)
-        {
-            bytes ~= compliment & 0xff;
-            compliment >>= 8;
-            --size;
-        }
+
+        bytes ~= marker;
+        bytes ~= Segmented!(ulong, ubyte)(compliment).segments[0..size];
     }
 
     void write(const string value)

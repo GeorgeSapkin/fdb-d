@@ -9,6 +9,7 @@ import
     std.typecons;
 
 import
+    fdb.tuple.segmented,
     fdb.tuple.tupletype;
 
 struct FDBVariant
@@ -85,25 +86,19 @@ struct FDBVariant
 
     private auto getInt() const
     {
-        ulong dbValue;
-        ubyte pos;
-
-        const auto size = type.FDBsizeof;
-        while (pos < size)
-        {
-            dbValue |= cast(long)slice[pos] << (pos << 3);
-            ++pos;
-        }
+        Segmented!(ulong, ubyte) dbValue;
+        dbValue.segments[0..slice.length] = slice;
 
         long value;
         if (type < TupleType.IntBase)
         {
-            value  = -(~dbValue);
+            value = -(~dbValue.value);
+            auto size = type.FDBsizeof;
             if (size < long.sizeof)
                 value |= (-1L << (size << 3));
         }
         else
-            value = dbValue;
+            value = dbValue.value;
         return value;
     }
 
