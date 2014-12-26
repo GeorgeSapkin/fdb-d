@@ -69,35 +69,43 @@ enum TupleType : ubyte {
     AliasSystem     = 255
 }
 
-private immutable ulong[] tupleTypeSize = [
-    /* TupleType.IntNeg8 : */ 8,
-    /* TupleType.IntNeg7 : */ 7,
-    /* TupleType.IntNeg6 : */ 6,
-    /* TupleType.IntNeg5 : */ 5,
-    /* TupleType.IntNeg4 : */ 4,
-    /* TupleType.IntNeg3 : */ 3,
-    /* TupleType.IntNeg2 : */ 2,
-    /* TupleType.IntNeg1 : */ 1,
-
-    /* TupleType.IntZero : */ 0,
-
-    /* TupleType.IntPos1 : */ 1,
-    /* TupleType.IntPos2 : */ 2,
-    /* TupleType.IntPos3 : */ 3,
-    /* TupleType.IntPos4 : */ 4,
-    /* TupleType.IntPos5 : */ 5,
-    /* TupleType.IntPos6 : */ 6,
-    /* TupleType.IntPos7 : */ 7,
-    /* TupleType.IntPos8 : */ 8,
-];
-
 auto FDBsizeof(const TupleType type) pure
+in
 {
     enforce(type.isFDBIntegral);
-    return tupleTypeSize[type - TupleType.IntNeg8];
+}
+body
+{
+    if (type > TupleType.IntZero)
+        return type - TupleType.IntZero;
+
+    return TupleType.IntZero - type;
 }
 
 bool isFDBIntegral(const TupleType type) pure
 {
     return type >= TupleType.IntNeg8 && type <= TupleType.IntPos8;
+}
+
+unittest
+{
+    assert(TupleType.IntNeg8.FDBsizeof == 8);
+    assert(TupleType.IntNeg7.FDBsizeof == 7);
+    assert(TupleType.IntNeg6.FDBsizeof == 6);
+    assert(TupleType.IntNeg5.FDBsizeof == 5);
+    assert(TupleType.IntNeg4.FDBsizeof == 4);
+    assert(TupleType.IntNeg3.FDBsizeof == 3);
+    assert(TupleType.IntNeg2.FDBsizeof == 2);
+    assert(TupleType.IntNeg1.FDBsizeof == 1);
+
+    assert(TupleType.IntZero.FDBsizeof == 0);
+
+    assert(TupleType.IntPos1.FDBsizeof == 1);
+    assert(TupleType.IntPos2.FDBsizeof == 2);
+    assert(TupleType.IntPos3.FDBsizeof == 3);
+    assert(TupleType.IntPos4.FDBsizeof == 4);
+    assert(TupleType.IntPos5.FDBsizeof == 5);
+    assert(TupleType.IntPos6.FDBsizeof == 6);
+    assert(TupleType.IntPos7.FDBsizeof == 7);
+    assert(TupleType.IntPos8.FDBsizeof == 8);
 }
