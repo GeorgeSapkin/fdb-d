@@ -1,9 +1,11 @@
 module fdb.tuple.segmented;
 
-union Segmented(A, S)
+union Segmented(V, S, A = V) if (V.sizeof == A.sizeof)
 {
-    enum count(A, S) = (A.sizeof + (S.sizeof - 1)) / S.sizeof;
+    enum count(V, S) = (V.sizeof + (S.sizeof - 1)) / S.sizeof;
 
-    A value;
-    S[count!(A, S)] segments;
+    V value;
+    A alt;
+
+    S[count!(V, S)] segments;
 }

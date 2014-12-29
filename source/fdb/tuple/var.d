@@ -86,7 +86,7 @@ struct FDBVariant
     private auto getInt() const
     {
         Segmented!(ulong, ubyte) dbValue;
-        dbValue.segments[0..slice.length] = slice;
+        dbValue.segments[0..slice.length] = slice.retro.array;
 
         long value;
         if (type < TupleType.IntBase)
