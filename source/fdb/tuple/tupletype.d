@@ -1,7 +1,8 @@
 module fdb.tuple.tupletype;
 
 import
-    std.exception;
+    std.exception,
+    std.uuid;
 
 const uint  floatSignMask  = 0x80_00_00_00U;
 const ulong doubleSignMask = 0x80_00_00_00_00_00_00_00UL;
@@ -90,7 +91,11 @@ enum TupleType : ubyte {
 auto FDBsizeof(const TupleType type) pure
 in
 {
-    enforce(type.isFDBIntegral || type.isFDBFloat || type.isFDBDouble);
+    enforce(
+        type.isFDBIntegral ||
+        type.isFDBFloat ||
+        type.isFDBDouble ||
+        type.isFDBUUID);
 }
 body
 {
@@ -104,6 +109,8 @@ body
         return float.sizeof;
     else if (type.isFDBDouble)
         return double.sizeof;
+    else if (type.isFDBUUID)
+        return UUID.sizeof;
 
     assert(0, "Type " ~ type ~ " is not supported");
 }
@@ -121,6 +128,11 @@ bool isFDBFloat(const TupleType type) pure @nogc
 bool isFDBDouble(const TupleType type) pure @nogc
 {
     return type == TupleType.Double;
+}
+
+bool isFDBUUID(const TupleType type) pure @nogc
+{
+    return type == TupleType.Uuid128;
 }
 
 unittest

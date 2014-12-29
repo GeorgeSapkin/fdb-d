@@ -4,8 +4,7 @@ import
     std.exception;
 
 import
-    fdb.tuple.unpacker,
-    fdb.tuple.var;
+    fdb.tuple.unpacker;
 
 auto value(T, F)(F f)
 {

@@ -1,6 +1,8 @@
 module fdb.tuple;
 
-import std.math : isNaN;
+import
+    std.math,
+    std.uuid;
 
 public import
     fdb.tuple.future,
@@ -71,4 +73,8 @@ unittest
     assert(pack(1.0).unpack[0].get!double                ==  1.0);
     assert(pack(double.max).unpack[0].get!double         ==  double.max);
     assert(pack(double.infinity).unpack[0].get!double    ==  double.infinity);
+
+    // Combined UUID tests
+    assert(pack(sha1UUID("some value")).unpack[0].get!UUID
+        == sha1UUID("some value"));
 }

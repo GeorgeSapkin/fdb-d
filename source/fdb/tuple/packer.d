@@ -5,7 +5,8 @@ import
     std.math,
     std.range,
     std.string,
-    std.traits;
+    std.traits,
+    std.uuid;
 
 import
     fdb.tuple.integral,
@@ -79,13 +80,17 @@ private class Packer
         bytes ~= cast(ubyte[])(value.toStringz[0..value.length + 1]);
     }
 
+    void write(T : UUID)(const T value)
+    {
+        bytes ~= TupleType.Uuid128;
+        bytes ~= value.data;
+    }
+
     void write(R)(const R r)
     if(isInputRange!R && !is(R == string))
     {
         foreach (const e; r)
-        {
             write(e);
-        }
     }
 
     void write(const Part part)
