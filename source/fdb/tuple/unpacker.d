@@ -24,6 +24,10 @@ if (isInputRange!(Unqual!Range))
             part = var.get!long;
         else if (var.isTypeOf!string)
             part = var.get!string;
+        else if (var.isTypeOf!float)
+            part = var.get!float;
+        else if (var.isTypeOf!double)
+            part = var.get!double;
 
         parts ~= part;
         pos   += var.size;

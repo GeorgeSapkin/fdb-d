@@ -1,5 +1,7 @@
 module fdb.tuple;
 
+import std.math : isNaN;
+
 public import
     fdb.tuple.future,
     fdb.tuple.packer,
@@ -8,7 +10,7 @@ public import
 
 unittest
 {
-    // Combined tests
+    // Combined long tests
     assert(pack(-0x08_00_00_00_00_00_00_07).unpack[0].get!long
         == -0x08_00_00_00_00_00_00_07);
     assert(pack(-0x07_00_00_00_00_00_06).unpack[0].get!long
@@ -45,4 +47,28 @@ unittest
         == 0x07_00_00_00_00_00_06);
     assert(pack(0x08_00_00_00_00_00_00_07).unpack[0].get!long
         == 0x08_00_00_00_00_00_00_07);
+
+    // Combined float tests
+    assert(pack(float.nan).unpack[0].get!float.isNaN);
+    assert(pack(-float.infinity).unpack[0].get!float   == -float.infinity);
+    assert(pack(-float.max).unpack[0].get!float        == -float.max);
+    assert(pack(-1.0f).unpack[0].get!float             == -1.0f);
+    assert(pack(-float.min_normal).unpack[0].get!float == -float.min_normal);
+    assert(pack(0.0f).unpack[0].get!float              ==  0.0f);
+    assert(pack(float.min_normal).unpack[0].get!float  ==  float.min_normal);
+    assert(pack(1.0f).unpack[0].get!float              ==  1.0f);
+    assert(pack(float.max).unpack[0].get!float         ==  float.max);
+    assert(pack(float.infinity).unpack[0].get!float    ==  float.infinity);
+
+    // Combined double tests
+    assert(pack(double.nan).unpack[0].get!double.isNaN);
+    assert(pack(-double.infinity).unpack[0].get!double   == -double.infinity);
+    assert(pack(-double.max).unpack[0].get!double        == -double.max);
+    assert(pack(-1.0).unpack[0].get!double               == -1.0);
+    assert(pack(-double.min_normal).unpack[0].get!double == -double.min_normal);
+    assert(pack(0.0).unpack[0].get!double                ==  0.0);
+    assert(pack(double.min_normal).unpack[0].get!double  ==  double.min_normal);
+    assert(pack(1.0).unpack[0].get!double                ==  1.0);
+    assert(pack(double.max).unpack[0].get!double         ==  double.max);
+    assert(pack(double.infinity).unpack[0].get!double    ==  double.infinity);
 }

@@ -2,6 +2,7 @@ module fdb.tuple.packer;
 
 import
     std.exception,
+    std.math,
     std.range,
     std.string,
     std.traits;
@@ -38,6 +39,40 @@ private class Packer
         bytes ~= segmented.segments[0..size].retro.array;
     }
 
+    void write(T)(const T value)
+    if (isFloatingPoint!T)
+    {
+        auto filtered = (!value.isNaN) ? value : T.nan;
+        static if (is(T == float))
+        {
+            auto segmented = Segmented!(T, ubyte, uint)(filtered);
+
+            // check if value is positive or negative
+            if ((segmented.alt & floatSignMask) == 0)
+                segmented.alt |= floatSignMask;
+            else // negative
+                segmented.alt  = ~segmented.alt;
+
+            bytes ~= TupleType.Single;
+            bytes ~= segmented.segments[].retro.array;
+        }
+        else static if (is(T == double))
+        {
+            auto segmented = Segmented!(T, ubyte, ulong)(filtered);
+
+            // check if value is positive or negative
+            if ((segmented.alt & doubleSignMask) == 0)
+                segmented.alt |= doubleSignMask;
+            else // negative
+                segmented.alt  = ~segmented.alt;
+
+            bytes ~= TupleType.Double;
+            bytes ~= segmented.segments[].retro.array;
+        }
+        else
+            static assert(0, "Type " ~ T.stringof ~ "is not supported");
+    }
+
     void write(const string value)
     {
         bytes ~= TupleType.Utf8;
@@ -59,7 +94,11 @@ private class Packer
             write(*v);
         else if (auto v = part.peek!string)
             write(*v);
-        // there is no else part because Part can only be long or string
+        else if (auto v = part.peek!float)
+            write(*v);
+        else if (auto v = part.peek!double)
+            write(*v);
+            // there is no else part because Part can only be long or string
     }
 }
 

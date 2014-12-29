@@ -13,12 +13,12 @@ import
 
 struct FDBVariant
 {
-    const TupleType type;
+    const TupleType      type;
     const shared ubyte[] slice;
 
     @property auto size()
     {
-        if (type.isFDBIntegral)
+        if (type.isFDBIntegral || type.isFDBFloat || type.isFDBDouble)
             return type.FDBsizeof;
         else
         {
@@ -33,7 +33,7 @@ struct FDBVariant
         if (isInputRange!(Unqual!Range))
     in
     {
-        if (type.isFDBIntegral)
+        if (type.isFDBIntegral || type.isFDBFloat || type.isFDBDouble)
             enforce(type.FDBsizeof == slice.length);
     }
     body
@@ -64,6 +64,10 @@ struct FDBVariant
             return type.isFDBIntegral;
         else static if (is(T == string))
             return type == TupleType.Utf8 || type == TupleType.Bytes;
+        else static if (is(T == float))
+            return type.isFDBFloat;
+        else static if (is(T == double))
+            return type.isFDBDouble;
         else
             static assert(0, "Type " ~ T.to!string ~ " is not supported");
     }
@@ -79,6 +83,10 @@ struct FDBVariant
             return getInt;
         else static if (is(T == string))
             return getStr;
+        else static if (is(T == float))
+            return getFloat;
+        else static if (is(T == double))
+            return getDouble;
         else
             static assert(0, "Type " ~ T.to!string ~ " is not supported");
     }
@@ -108,6 +116,36 @@ struct FDBVariant
         if (size > 0)
             chars = chars[0..size];
         return chars.to!string;
+    }
+
+    private auto getFloat() const
+    {
+        Segmented!(float, ubyte, uint) dbValue;
+        dbValue.segments[0..slice.length] = slice.retro.array;
+
+        // check if value is positive or negative
+        if ((dbValue.alt & floatSignMask) != 0)
+            dbValue.alt ^= floatSignMask;
+        else // negative
+            dbValue.alt  = ~dbValue.alt;
+
+        auto value = dbValue.value;
+        return value;
+    }
+
+    private auto getDouble() const
+    {
+        Segmented!(double, ubyte, ulong) dbValue;
+        dbValue.segments[0..slice.length] = slice.retro.array;
+
+        // check if value is positive or negative
+        if ((dbValue.alt & doubleSignMask) != 0)
+            dbValue.alt ^= doubleSignMask;
+        else // negative
+            dbValue.alt = ~dbValue.alt;
+
+        auto value = dbValue.value;
+        return value;
     }
 }
 
