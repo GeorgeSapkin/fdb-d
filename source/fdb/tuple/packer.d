@@ -57,32 +57,28 @@ private class Packer
         auto filtered = (!value.isNaN) ? value : T.nan;
         static if (is(T == float))
         {
-            auto segmented = Segmented!(T, ubyte, uint)(filtered);
-
-            // check if value is positive or negative
-            if ((segmented.alt & floatSignMask) == 0)
-                segmented.alt |= floatSignMask;
-            else // negative
-                segmented.alt  = ~segmented.alt;
+            auto segmented  = Segmented!(T, ubyte, uint)(filtered);
+            auto mask       = floatSignMask;
 
             bytes ~= TupleType.Single;
-            bytes ~= segmented.segments[].retro.array;
         }
         else static if (is(T == double))
         {
-            auto segmented = Segmented!(T, ubyte, ulong)(filtered);
-
-            // check if value is positive or negative
-            if ((segmented.alt & doubleSignMask) == 0)
-                segmented.alt |= doubleSignMask;
-            else // negative
-                segmented.alt  = ~segmented.alt;
+            auto segmented  = Segmented!(T, ubyte, ulong)(filtered);
+            auto mask       = doubleSignMask;
 
             bytes ~= TupleType.Double;
-            bytes ~= segmented.segments[].retro.array;
         }
         else
             static assert(0, "Type " ~ T.stringof ~ "is not supported");
+
+        // check if value is positive or negative
+        if ((segmented.alt & mask) == 0)
+            segmented.alt |= mask;
+        else // negative
+            segmented.alt  = ~segmented.alt;
+
+        bytes ~= segmented.segments[].retro.array;
     }
 
     void write(const UUID value)
