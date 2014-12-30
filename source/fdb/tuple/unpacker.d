@@ -127,7 +127,7 @@ private struct FDBVariant
 
     private auto getInt() const
     {
-        Segmented!(ulong, ubyte) dbValue;
+        Segmented!ulong dbValue;
         dbValue.segments[0..slice.length] = slice.retro.array;
 
         long value;

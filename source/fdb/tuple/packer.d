@@ -45,7 +45,7 @@ private class Packer
             cast(ubyte)(TupleType.IntBase + ((value > 0) ? size : -size));
 
         ulong compliment = (value > 0) ? value : ~(-value);
-        auto segmented   = Segmented!(ulong, ubyte)(compliment);
+        auto segmented   = Segmented!ulong(compliment);
 
         bytes ~= marker;
         bytes ~= segmented.segments[0..size].retro.array;

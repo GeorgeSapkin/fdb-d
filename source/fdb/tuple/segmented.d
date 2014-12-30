@@ -1,6 +1,6 @@
 module fdb.tuple.segmented;
 
-union Segmented(V, S, A = V) if (V.sizeof == A.sizeof)
+union Segmented(V, S = ubyte, A = V) if (V.sizeof == A.sizeof)
 {
     enum count(V, S) = (V.sizeof + (S.sizeof - 1)) / S.sizeof;
 
