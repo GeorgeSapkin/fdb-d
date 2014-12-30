@@ -74,6 +74,8 @@ private struct FDBVariant
     {
         static if (is(T == typeof(null)))
             return type == TupleType.Nil;
+        else static if (is(T == ubyte[]))
+            return type == TupleType.Bytes;
         else static if (is(T == string))
             return type == TupleType.Utf8;
         else static if (is(T == long))
@@ -97,6 +99,8 @@ private struct FDBVariant
     {
         static if (is(T == typeof(null)))
             return getNull;
+        else static if (is(T == ubyte[]))
+            return getBytes;
         else static if (is(T == string))
             return getStr;
         else static if (is(T == long))
@@ -114,6 +118,21 @@ private struct FDBVariant
     private auto getNull() const pure @nogc
     {
         return null;
+    }
+
+    private auto getBytes() const
+    in
+    {
+        enforce(slice.length > 1);
+        enforce(slice[$ - 1] == byteArrayEndMarker);
+    }
+    body
+    {
+        ubyte[] result;
+        foreach(i, b; slice[0..$-1])
+            if (b != byteArrayEndMarker || i == 0 || slice[i - 1] != 0x00)
+                result ~= b;
+        return result;
     }
 
     private auto getStr() const

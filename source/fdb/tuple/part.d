@@ -6,6 +6,7 @@ import
 
 alias Part = Algebraic!(
     typeof(null),
+    ubyte[],
     string,
     long,
     float,

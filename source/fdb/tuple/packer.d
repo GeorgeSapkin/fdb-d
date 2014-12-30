@@ -1,6 +1,7 @@
 module fdb.tuple.packer;
 
 import
+    std.algorithm,
     std.exception,
     std.math,
     std.range,
@@ -21,6 +22,15 @@ private class Packer
     void write(typeof(null))
     {
         bytes ~= TupleType.Nil;
+    }
+
+    void write(const ubyte[] value)
+    {
+        bytes ~= TupleType.Bytes;
+        bytes ~= value
+            .map!(a => a ? [a] : cast(ubyte[])[0x00, byteArrayEndMarker])
+            .reduce!"a ~ b";
+        bytes ~= byteArrayEndMarker;
     }
 
     void write(const string value)

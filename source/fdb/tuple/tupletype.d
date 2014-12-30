@@ -4,8 +4,9 @@ import
     std.exception,
     std.uuid;
 
-const uint  floatSignMask  = 0x80_00_00_00U;
-const ulong doubleSignMask = 0x80_00_00_00_00_00_00_00UL;
+static const uint  floatSignMask      = 0x80_00_00_00U;
+static const ulong doubleSignMask     = 0x80_00_00_00_00_00_00_00UL;
+static const ulong byteArrayEndMarker = 0xff;
 
 enum TupleType : ubyte {
     /**

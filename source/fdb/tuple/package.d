@@ -15,6 +15,10 @@ unittest
     // Combined null
     assert(pack(null).unpack[0].get!(typeof(null)) is null);
 
+    // Combined byte array tests
+    assert(pack(cast(ubyte[])[ 0xa0, 0x00, 0x0b ]).unpack[0].get!(ubyte[])
+        == cast(ubyte[])[ 0xa0, 0x00, 0x0b ]);
+
     // Combined string tests
     assert(pack("Some usefull string").unpack[0].get!string
         == "Some usefull string");
