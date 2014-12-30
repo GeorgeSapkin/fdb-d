@@ -4,4 +4,10 @@ import
     std.uuid,
     std.variant;
 
-alias Part = Algebraic!(long, string, float, double, UUID);
+alias Part = Algebraic!(
+    typeof(null),
+    string,
+    long,
+    float,
+    double,
+    UUID);

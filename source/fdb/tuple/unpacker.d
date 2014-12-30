@@ -72,10 +72,12 @@ private struct FDBVariant
 
     auto isTypeOf(T)() const
     {
-        static if (is(T == long))
-            return type.isFDBIntegral;
+        static if (is(T == typeof(null)))
+            return type == TupleType.Nil;
         else static if (is(T == string))
-            return type == TupleType.Utf8 || type == TupleType.Bytes;
+            return type == TupleType.Utf8;
+        else static if (is(T == long))
+            return type.isFDBIntegral;
         else static if (is(T == float))
             return type.isFDBFloat;
         else static if (is(T == double))
@@ -93,10 +95,12 @@ private struct FDBVariant
     }
     body
     {
-        static if (is(T == long))
-            return getInt;
+        static if (is(T == typeof(null)))
+            return getNull;
         else static if (is(T == string))
             return getStr;
+        else static if (is(T == long))
+            return getInt;
         else static if (is(T == float))
             return getFloat;
         else static if (is(T == double))
@@ -105,6 +109,20 @@ private struct FDBVariant
             return getUUID;
         else
             static assert(0, "Type " ~ T.to!string ~ " is not supported");
+    }
+
+    private auto getNull() const pure @nogc
+    {
+        return null;
+    }
+
+    private auto getStr() const
+    {
+        auto chars = (cast(char[])slice);
+        auto size  = chars.indexOf(0, 0);
+        if (size > 0)
+            chars  = chars[0..size];
+        return chars.to!string;
     }
 
     private auto getInt() const
@@ -123,15 +141,6 @@ private struct FDBVariant
         else
             value = dbValue.value;
         return value;
-    }
-
-    private auto getStr() const
-    {
-        auto chars = (cast(char[])slice);
-        auto size = chars.indexOf(0, 0);
-        if (size > 0)
-            chars = chars[0..size];
-        return chars.to!string;
     }
 
     private auto getFloat() const
@@ -185,16 +194,12 @@ if (isInputRange!(Unqual!Range))
         auto var    = variant(marker, bytes, pos);
 
         Part part;
-        if (var.isTypeOf!long)
-            part = var.get!long;
-        else if (var.isTypeOf!string)
-            part = var.get!string;
-        else if (var.isTypeOf!float)
-            part = var.get!float;
-        else if (var.isTypeOf!double)
-            part = var.get!double;
-        else if (var.isTypeOf!UUID)
-            part = var.get!UUID;
+        foreach (T; Part.AllowedTypes)
+            if (var.isTypeOf!T)
+            {
+                part = var.get!T;
+                break;
+            }
 
         parts ~= part;
         pos   += var.size;

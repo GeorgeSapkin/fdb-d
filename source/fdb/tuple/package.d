@@ -12,6 +12,13 @@ public import
 
 unittest
 {
+    // Combined null
+    assert(pack(null).unpack[0].get!(typeof(null)) is null);
+
+    // Combined string tests
+    assert(pack("Some usefull string").unpack[0].get!string
+        == "Some usefull string");
+
     // Combined long tests
     assert(pack(-0x08_00_00_00_00_00_00_07).unpack[0].get!long
         == -0x08_00_00_00_00_00_00_07);

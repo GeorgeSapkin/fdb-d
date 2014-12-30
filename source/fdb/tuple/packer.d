@@ -18,6 +18,17 @@ private class Packer
 {
     ubyte[] bytes;
 
+    void write(typeof(null))
+    {
+        bytes ~= TupleType.Nil;
+    }
+
+    void write(const string value)
+    {
+        bytes ~= TupleType.Utf8;
+        bytes ~= cast(ubyte[])(value.toStringz[0..value.length + 1]);
+    }
+
     void write(T)(const T value)
     if (isIntegral!T)
     in
@@ -74,13 +85,12 @@ private class Packer
             static assert(0, "Type " ~ T.stringof ~ "is not supported");
     }
 
-    void write(const string value)
+    void write(const UUID value)
+    in
     {
-        bytes ~= TupleType.Utf8;
-        bytes ~= cast(ubyte[])(value.toStringz[0..value.length + 1]);
+        enforce(!value.data.empty);
     }
-
-    void write(T : UUID)(const T value)
+    body
     {
         bytes ~= TupleType.Uuid128;
         bytes ~= value.data;
@@ -99,8 +109,9 @@ private class Packer
             if (auto v = part.peek!T)
             {
                 write(*v);
-                break;
+                return;
             }
+        enforce(0, "Type " ~ part.type.toString ~ " is not supported");
     }
 }
 
