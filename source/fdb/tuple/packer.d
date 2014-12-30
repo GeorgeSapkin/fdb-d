@@ -103,6 +103,8 @@ private class Packer
             write(*v);
         else if (auto v = part.peek!double)
             write(*v);
+        else if (auto v = part.peek!UUID)
+            write(*v);
             // there is no else part because Part can only be long or string
     }
 }
