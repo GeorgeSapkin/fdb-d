@@ -95,17 +95,12 @@ private class Packer
 
     void write(const Part part)
     {
-        if (auto v = part.peek!long)
-            write(*v);
-        else if (auto v = part.peek!string)
-            write(*v);
-        else if (auto v = part.peek!float)
-            write(*v);
-        else if (auto v = part.peek!double)
-            write(*v);
-        else if (auto v = part.peek!UUID)
-            write(*v);
-            // there is no else part because Part can only be long or string
+        foreach (T; Part.AllowedTypes)
+            if (auto v = part.peek!T)
+            {
+                write(*v);
+                break;
+            }
     }
 }
 
