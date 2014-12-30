@@ -102,9 +102,9 @@ private struct FDBVariant
         else static if (is(T == long))
             return getInt;
         else static if (is(T == float))
-            return getFloat;
+            return getFloat!(float, uint, floatSignMask);
         else static if (is(T == double))
-            return getDouble;
+            return getFloat!(double, ulong, doubleSignMask);
         else static if (is(T == UUID))
             return getUUID;
         else
@@ -143,31 +143,16 @@ private struct FDBVariant
         return value;
     }
 
-    private auto getFloat() const
+    private auto getFloat(F, I, alias M)() const
     {
-        Segmented!(float, ubyte, uint) dbValue;
+        Segmented!(F, ubyte, I) dbValue;
         dbValue.segments[0..slice.length] = slice.retro.array;
 
         // check if value is positive or negative
-        if ((dbValue.alt & floatSignMask) != 0)
-            dbValue.alt ^= floatSignMask;
+        if ((dbValue.alt & M) != 0)
+            dbValue.alt ^= M;
         else // negative
             dbValue.alt  = ~dbValue.alt;
-
-        auto value = dbValue.value;
-        return value;
-    }
-
-    private auto getDouble() const
-    {
-        Segmented!(double, ubyte, ulong) dbValue;
-        dbValue.segments[0..slice.length] = slice.retro.array;
-
-        // check if value is positive or negative
-        if ((dbValue.alt & doubleSignMask) != 0)
-            dbValue.alt ^= doubleSignMask;
-        else // negative
-            dbValue.alt = ~dbValue.alt;
 
         auto value = dbValue.value;
         return value;
