@@ -1,6 +1,7 @@
 module fdb.tuple.unpacker;
 
 import
+    std.array,
     std.conv,
     std.exception,
     std.range,
@@ -209,4 +210,14 @@ if (isInputRange!(Unqual!Range))
         pos   += var.size;
     }
     return parts;
+}
+
+/**
+ * Returns single value if type matches T
+ */
+auto unpack(T, Range)(Range bytes)
+{
+    auto unpacked = unpack(bytes);
+    auto value    = unpacked.front.get!T;
+    return value;
 }
