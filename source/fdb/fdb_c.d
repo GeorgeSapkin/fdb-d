@@ -17,11 +17,11 @@ alias FutureHandle      = FDBFuture *;
 struct FDBTransaction {}
 alias TransactionHandle = FDBTransaction *;
 
-alias fdb_error_t       = int;
-alias fdb_bool_t        = int;
+alias fdb_error_t = int;
+alias fdb_bool_t  = int;
 
-alias Key               = ubyte[];
-alias Value             = ubyte[];
+alias Key   = ubyte[];
+alias Value = ubyte[];
 
 struct keyvalue
 {
