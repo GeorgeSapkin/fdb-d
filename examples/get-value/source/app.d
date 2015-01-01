@@ -31,16 +31,7 @@ void main()
         ex.handleException;
     }
 
-    try
-    {
-        "SomeKey = ".write;
-        auto values = db[key].unpack;
-
-        if (!values.empty)
-            if (auto value = values[0].peek!string)
-                (*value).write;
-        writeln;
-    }
+    try writeln("SomeKey = " ~ db[key].unpack!string);
     catch (FDBException ex)
     {
         ex.handleException;

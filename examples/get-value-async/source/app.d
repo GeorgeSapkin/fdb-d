@@ -44,13 +44,7 @@ void main()
                 if (ex2)
                     ex2.handleException;
 
-                "SomeKey = ".write;
-                auto values = value.unpack;
-
-                if (!values.empty)
-                    if (auto v = values[0].peek!string)
-                        (*v).write;
-                writeln;
+                writeln("SomeKey = " ~ value.unpack!string);
 
                 tr2.commit((ex3)
                 {
