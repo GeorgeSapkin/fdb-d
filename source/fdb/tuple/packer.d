@@ -7,6 +7,7 @@ import
     std.range,
     std.string,
     std.traits,
+    std.typecons,
     std.uuid;
 
 import
@@ -123,7 +124,7 @@ private class Packer
 
 auto pack(T...)(T parts)
 {
-    scope auto w = new Packer;
+    auto w = scoped!Packer;
     foreach (const p; parts)
         w.write(p);
     return w.bytes.idup;
