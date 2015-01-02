@@ -1,0 +1,11 @@
+{
+	"name":         "fdb-d-example-class-scheduling",
+	"description":  "FoundationDB D API - Class scheduling example",
+	"copyright":    "Copyright © 2014, George Sapkin",
+	"authors":     ["George Sapkin"],
+	"license":      "MIT",
+	"targetType":   "executable",
+	"dependencies" : {
+		"fdb-d": {"version": "~master", "path": "../../"}
+	}
+}
