@@ -27,70 +27,44 @@ void main()
     auto key2 = pack(prefix, 2);
 
     "Doing set transaction".writeln;
-    auto future = db.doTransaction(
-        (tr, commitCallback)
-        {
-            "Setting values".writeln;
-            tr[key1] = pack("SomeValue1");
-            tr[key2] = pack("SomeValue2");
-
-            "Committing set transaction".writeln;
-            commitCallback(null);
-        },
-        (ex)
-        {
-            if (ex)
-                ex.handleException;
-        });
-    future.await;
+    db.run((tr)
+    {
+        tr[key1] = pack("SomeValue1");
+        tr[key2] = pack("SomeValue2");
+    });
 
     "Doing get transaction".writeln;
-    auto future2 = db.doTransaction(
-        (tr, commitCallback)
+    db.run((tr)
+    {
+        "Getting [SomeKey1, SomeKey2] range".writeln;
+        auto r = tr[rangeInclusive(key1, key2)];
+        foreach (record; r)
         {
-            "Getting [SomeKey1, SomeKey2] range".writeln;
-            auto f  = tr.getRange(rangeInclusive(key1, key2));
-            f.forEach((Record record)
+            "Got ".write;
+            auto keyVars = record.key.unpack;
+            if (!keyVars.empty)
             {
-                "Got ".write;
-                auto keyVars = record.key.unpack;
-                if (!keyVars.empty)
-                {
-                    auto key = reduce!aggregate("", keyVars);
-                    key.write;
-                }
-                else
-                    "no key".write;
+                auto key = reduce!aggregate("", keyVars);
+                key.write;
+            }
+            else
+                "no key".write;
 
-                " with ".write;
-                auto valueVars = record.value.unpack;
-                if (!valueVars.empty)
-                {
-                    auto value = reduce!aggregate("", valueVars);
-                    value.write;
-                }
-                else
-                    "no value".write;
-                writeln;
-            },
-            (ex)
+            " with ".write;
+            auto valueVars = record.value.unpack;
+            if (!valueVars.empty)
             {
-                if (ex)
-                    ex.handleException;
+                auto value = reduce!aggregate("", valueVars);
+                value.write;
+            }
+            else
+                "no value".write;
+            writeln;
+        }
+    });
 
-                "Committing get transaction".writeln;
-                commitCallback(null);
-            });
-        },
-        (ex)
-        {
-            if (ex)
-                ex.handleException;
-
-            "Stopping network".writeln;
-            fdb.close;
-        });
-    future2.await;
+    "Stopping network".writeln;
+    fdb.close;
 }
 
 void handleException(E)(E ex)
