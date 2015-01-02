@@ -25,21 +25,16 @@ void main()
     try
     {
         "Creating write transaction".writeln;
-        auto tr     = db.createTransaction;
+        auto tr = db.createTransaction;
 
         auto prefix = "SomeKey";
 
-        // packing key into a tuple
-        auto key1   = pack(prefix, 1);
-        auto value1 = pack("SomeValue1");
-        tr.set(key1, value1);
-
-        // packing key into a tuple
-        auto key2   = pack(prefix, 2);
-        auto value2 = pack("SomeValue2");
+        auto key1 = pack(prefix, 1);
+        auto key2 = pack(prefix, 2);
 
         "Setting values".writeln;
-        tr.set(key2, value2);
+        tr[key1] = pack("SomeValue1");
+        tr[key2] = pack("SomeValue2");
 
         tr.commit((ex)
         {
