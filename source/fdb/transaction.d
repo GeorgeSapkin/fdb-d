@@ -55,6 +55,8 @@ shared interface IReadOnlyTransaction
     RecordRange opIndex(RangeInfo info);
 }
 
+alias WorkFunc = void delegate(shared Transaction tr, VoidFutureCallback cb);
+
 shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
 {
     private const Database    db;
@@ -689,4 +691,82 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         set(key, value);
         return value;
     }
+
+    void run(SimpleWorkFunc func)
+    {
+        WorkFunc wf = (tr, cb)
+        {
+            func(tr);
+            cb(null);
+        };
+
+        VoidFutureCallback cb = (ex)
+        {
+            enforce(ex is null, ex);
+        };
+
+        auto future = createFuture!retryLoop(this, wf, cb);
+        future.await;
+    };
+
+    auto doTransaction(
+        WorkFunc           func,
+        VoidFutureCallback commitCallback)
+    {
+        auto future = createFuture!retryLoop(this, func, commitCallback);
+        return future;
+    };
 }
+
+void retryLoop(
+    shared Transaction tr,
+    WorkFunc           func,
+    VoidFutureCallback cb)
+{
+    try
+    {
+        func(tr, (ex)
+        {
+            if (ex)
+                onError(tr, ex, func, cb);
+            else
+            {
+                auto future = tr.commit((commitErr)
+                {
+                    if (commitErr)
+                        onError(tr, commitErr, func, cb);
+                    else
+                        cb(commitErr);
+                });
+                future.await;
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        onError(tr, ex, func, cb);
+    }
+}
+
+private void onError(
+    shared Transaction tr,
+    Exception          ex,
+    WorkFunc           func,
+    VoidFutureCallback cb)
+{
+    if (auto fdbex = cast(FDBException)ex)
+    {
+        tr.onError(fdbex, (retryErr)
+        {
+            if (retryErr)
+                cb(retryErr);
+            else
+                retryLoop(tr, func, cb);
+        });
+    }
+    else
+    {
+        tr.cancel();
+        cb(ex);
+    }
+};

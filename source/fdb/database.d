@@ -3,7 +3,8 @@ module fdb.database;
 import
     std.conv,
     std.exception,
-    std.string;
+    std.string,
+    std.traits;
 
 import
     fdb.cluster,
@@ -165,69 +166,33 @@ shared class Database : IDirect, IDisposable
         tr.commit.await;
         return value;
     }
+
+    void clear(const Key key)
+    {
+        auto tr = createTransaction();
+        tr.clear(key);
+    }
+
+    void clearRange(const RangeInfo info)
+    {
+        auto tr = createTransaction();
+        tr.clearRange(info);
+    }
+
+    void run(SimpleWorkFunc func)
+    {
+        auto tr = createTransaction();
+        tr.run(func);
+    };
+
+    alias LoopFuture = shared FunctionFuture!(
+        retryLoop, ParameterTypeTuple!retryLoop);
+
+    LoopFuture doTransaction(
+        WorkFunc           func,
+        VoidFutureCallback commitCallback)
+    {
+        auto tr = createTransaction();
+        return tr.doTransaction(func, commitCallback);
+    };
 }
-
-alias WorkFunc = void delegate(shared Transaction tr, VoidFutureCallback cb);
-
-auto doTransaction(
-    shared Database    db,
-    WorkFunc           func,
-    VoidFutureCallback commitCallback)
-{
-    auto tr     = db.createTransaction();
-    auto future = createFuture!retryLoop(tr, func, commitCallback);
-    return future;
-};
-
-void retryLoop(
-    shared Transaction tr,
-    WorkFunc           func,
-    VoidFutureCallback cb)
-{
-    try
-    {
-        func(tr, (ex)
-        {
-            if (ex)
-                onError(tr, ex, func, cb);
-            else
-            {
-                auto future = tr.commit((commitErr)
-                {
-                    if (commitErr)
-                        onError(tr, commitErr, func, cb);
-                    else
-                        cb(commitErr);
-                });
-                future.await;
-            }
-        });
-    }
-    catch (Exception ex)
-    {
-        onError(tr, ex, func, cb);
-    }
-}
-
-private void onError(
-    shared Transaction tr,
-    Exception          ex,
-    WorkFunc           func,
-    VoidFutureCallback cb)
-{
-    if (auto fdbex = cast(FDBException)ex)
-    {
-        tr.onError(fdbex, (retryErr)
-        {
-            if (retryErr)
-                cb(retryErr);
-            else
-                retryLoop(tr, func, cb);
-        });
-    }
-    else
-    {
-        tr.cancel();
-        cb(ex);
-    }
-};
