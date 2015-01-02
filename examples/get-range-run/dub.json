@@ -1,6 +1,6 @@
 {
-	"name":         "fdb-d-example-get-range-dotransaction",
-	"description":  "FoundationDB D API - Get range using doTransaction example",
+	"name":         "fdb-d-example-get-range-run",
+	"description":  "FoundationDB D API - Get range using run example",
 	"copyright":    "Copyright © 2014, George Sapkin",
 	"authors":     ["George Sapkin"],
 	"license":      "MIT",
