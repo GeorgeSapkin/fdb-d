@@ -7,7 +7,6 @@ import
     std.range,
     std.string,
     std.traits,
-    std.typecons,
     std.uuid;
 
 import
@@ -16,7 +15,7 @@ import
     fdb.tuple.segmented,
     fdb.tuple.tupletype;
 
-private class Packer
+private struct Packer
 {
     ubyte[] bytes;
 
@@ -124,7 +123,7 @@ private class Packer
 
 auto pack(T...)(T parts)
 {
-    auto w = scoped!Packer;
+    Packer w;
     foreach (const p; parts)
         w.write(p);
     return w.bytes.idup;
