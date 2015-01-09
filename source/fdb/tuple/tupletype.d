@@ -8,7 +8,8 @@ static const uint  floatSignMask      = 0x80_00_00_00U;
 static const ulong doubleSignMask     = 0x80_00_00_00_00_00_00_00UL;
 static const ulong byteArrayEndMarker = 0xff;
 
-enum TupleType : ubyte {
+enum TupleType : ubyte
+{
     /**
      * Null/Empty/Void
      */
@@ -37,7 +38,7 @@ enum TupleType : ubyte {
      * Base value for integer types (20 +/- n)
      */
     IntBase = 20,
-    IntZero = 20,
+    IntZero = IntBase,
 
     IntPos1 = 21,
     IntPos2 = 22,
