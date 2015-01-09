@@ -33,25 +33,25 @@ private struct FDBVariant
         switch (type) with (TupleType)
         {
             case Nil:
-                _part = getNull;
+                _part = readNull;
                 break;
             case Bytes:
-                _part = getBytes;
+                _part = readBytes;
                 break;
             case Utf8:
-                _part  = getStr;
+                _part = readStr;
                 break;
             case IntNeg8: .. case IntPos8:
-                _part = getInt;
+                _part = readInt;
                 break;
             case Single:
-                _part = getFloat!(float, uint, floatSignMask);
+                _part = readFloat!(float, uint, floatSignMask);
                 break;
             case Double:
-                _part = getFloat!(double, ulong, doubleSignMask);
+                _part = readFloat!(double, ulong, doubleSignMask);
                 break;
             case Uuid128:
-                _part = getUUID;
+                _part = readUUID;
                 break;
             default:
                 enforce(0, "Type " ~ type.to!string ~ " is not supported");
@@ -98,12 +98,12 @@ private struct FDBVariant
         }
     }
 
-    private auto getNull() const pure @nogc
+    private auto readNull() const pure @nogc
     {
         return null;
     }
 
-    private auto getBytes() const
+    private auto readBytes() const
     in
     {
         enforce(slice.length > 1);
@@ -118,7 +118,7 @@ private struct FDBVariant
         return result;
     }
 
-    private auto getStr() const
+    private auto readStr() const
     {
         auto chars = (cast(char[])slice);
         auto size  = chars.indexOf(0, 0);
@@ -127,7 +127,7 @@ private struct FDBVariant
         return chars.to!string;
     }
 
-    private auto getInt() const
+    private auto readInt() const
     {
         Segmented!ulong dbValue;
         dbValue.segments[0..slice.length] = slice.retro.array;
@@ -145,7 +145,7 @@ private struct FDBVariant
         return value;
     }
 
-    private auto getFloat(F, I, alias M)() const
+    private auto readFloat(F, I, alias M)() const
     {
         Segmented!(F, ubyte, I) dbValue;
         dbValue.segments[0..slice.length] = slice.retro.array;
@@ -160,7 +160,7 @@ private struct FDBVariant
         return value;
     }
 
-    private auto getUUID() const
+    private auto readUUID() const
     {
         UUID value;
         value.data = slice[0..$];
