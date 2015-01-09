@@ -68,6 +68,7 @@ auto FDBsizeof(const TupleType type) pure
 in
 {
     enforce(
+        type == TupleType.Nil ||
         type.isFDBIntegral ||
         type.isFDBFloat ||
         type.isFDBDouble ||
@@ -75,7 +76,9 @@ in
 }
 body
 {
-    if (type.isFDBIntegral)
+    if (type == TupleType.Nil)
+        return 0;
+    else if (type.isFDBIntegral)
     {
         if (type > TupleType.IntZero)
             return type - TupleType.IntZero;
@@ -113,23 +116,26 @@ bool isFDBUUID(const TupleType type) pure @nogc
 
 unittest
 {
-    assert(TupleType.IntNeg8.FDBsizeof == 8);
-    assert(TupleType.IntNeg7.FDBsizeof == 7);
-    assert(TupleType.IntNeg6.FDBsizeof == 6);
-    assert(TupleType.IntNeg5.FDBsizeof == 5);
-    assert(TupleType.IntNeg4.FDBsizeof == 4);
-    assert(TupleType.IntNeg3.FDBsizeof == 3);
-    assert(TupleType.IntNeg2.FDBsizeof == 2);
-    assert(TupleType.IntNeg1.FDBsizeof == 1);
+    with (TupleType)
+    {
+        assert(IntNeg8.FDBsizeof == 8);
+        assert(IntNeg7.FDBsizeof == 7);
+        assert(IntNeg6.FDBsizeof == 6);
+        assert(IntNeg5.FDBsizeof == 5);
+        assert(IntNeg4.FDBsizeof == 4);
+        assert(IntNeg3.FDBsizeof == 3);
+        assert(IntNeg2.FDBsizeof == 2);
+        assert(IntNeg1.FDBsizeof == 1);
 
-    assert(TupleType.IntZero.FDBsizeof == 0);
+        assert(IntZero.FDBsizeof == 0);
 
-    assert(TupleType.IntPos1.FDBsizeof == 1);
-    assert(TupleType.IntPos2.FDBsizeof == 2);
-    assert(TupleType.IntPos3.FDBsizeof == 3);
-    assert(TupleType.IntPos4.FDBsizeof == 4);
-    assert(TupleType.IntPos5.FDBsizeof == 5);
-    assert(TupleType.IntPos6.FDBsizeof == 6);
-    assert(TupleType.IntPos7.FDBsizeof == 7);
-    assert(TupleType.IntPos8.FDBsizeof == 8);
+        assert(IntPos1.FDBsizeof == 1);
+        assert(IntPos2.FDBsizeof == 2);
+        assert(IntPos3.FDBsizeof == 3);
+        assert(IntPos4.FDBsizeof == 4);
+        assert(IntPos5.FDBsizeof == 5);
+        assert(IntPos6.FDBsizeof == 6);
+        assert(IntPos7.FDBsizeof == 7);
+        assert(IntPos8.FDBsizeof == 8);
+    }
 }

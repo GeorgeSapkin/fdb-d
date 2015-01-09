@@ -20,8 +20,8 @@ unittest
         == cast(ubyte[])[ 0xa0, 0x00, 0x0b ]);
 
     // Combined string tests
-    assert(pack("Some usefull string").unpack!string
-        == "Some usefull string");
+    assert(pack("Some useful string").unpack!string
+        == "Some useful string");
 
     // Combined long tests
     assert(pack(-0x08_00_00_00_00_00_00_07).unpack!long
