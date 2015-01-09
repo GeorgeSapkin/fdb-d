@@ -19,9 +19,10 @@ private struct FDBVariant
     const TupleType      type;
     const shared ubyte[] slice;
 
+    private ulong _length;
     @property auto length()
     {
-        return slice.length;
+        return _length;
     }
 
     private Part _part;
@@ -83,13 +84,18 @@ private struct FDBVariant
         const ulong     offset) pure
     if (isInputRange!(Unqual!Range))
     {
-        if (type.isFDBIntegral)
+        if (type == TupleType.Nil ||
+            type.isFDBIntegral ||
+            type.isFDBFloat ||
+            type.isFDBDouble ||
+            type.isFDBUUID)
         {
             auto size = type.FDBsizeof;
             enforce(offset + size <= buffer.length);
 
-            this.type  = type;
-            this.slice = cast(shared)buffer[offset .. offset + size];
+            this.type    = type;
+            this.slice   = cast(shared)buffer[offset .. offset + size];
+            this._length = size;
         }
         else
         {
@@ -103,27 +109,35 @@ private struct FDBVariant
         return null;
     }
 
-    private auto readBytes() const
+    private auto readBytes()
     in
     {
         enforce(slice.length > 1);
-        enforce(slice[$ - 1] == byteArrayEndMarker);
     }
     body
     {
         ubyte[] result;
-        foreach(i, b; slice[0..$-1])
-            if (b != byteArrayEndMarker || i == 0 || slice[i - 1] != 0x00)
+        foreach(idx, b; slice)
+            if (b != byteArrayEndMarker)
                 result ~= b;
+            else if (idx > 0 && slice[idx - 1] != 0x00)
+            {
+                _length = idx + 1;
+                break;
+            }
+
         return result;
     }
 
-    private auto readStr() const
+    private auto readStr()
     {
         auto chars = (cast(char[])slice);
         auto size  = chars.indexOf(0, 0);
         if (size > 0)
-            chars  = chars[0..size];
+        {
+            chars   = chars[0..size];
+            _length = size + 1;
+        }
         return chars.to!string;
     }
 

@@ -88,4 +88,26 @@ unittest
     // Combined UUID tests
     assert(pack(sha1UUID("some value")).unpack!UUID
         == sha1UUID("some value"));
+
+    // Combined tests
+    assert(
+        pack(
+            null,
+            cast(ubyte[])[ 0xa0, 0x00, 0x0b ],
+            "some string",
+            -1578,
+            598759847,
+            -float.min_normal,
+            double.max,
+            sha1UUID("some value")
+        ).unpack == [
+            Part(null),
+            Part(cast(ubyte[])[ 0xa0, 0x00, 0x0b ]),
+            Part("some string"),
+            Part(-1578L),
+            Part(598759847L),
+            Part(-float.min_normal),
+            Part(double.max),
+            Part(sha1UUID("some value"))
+        ]);
 }
