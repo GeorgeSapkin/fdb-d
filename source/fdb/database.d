@@ -179,10 +179,10 @@ shared class Database : IDirect, IDisposable
     {
         auto tr = createTransaction();
         tr.run(func);
-    };
+    }
 
     alias LoopFuture = shared FunctionFuture!(
-        retryLoop, ParameterTypeTuple!retryLoop);
+        retryLoop, true, ParameterTypeTuple!retryLoop);
 
     LoopFuture doTransaction(
         WorkFunc           func,
@@ -190,5 +190,5 @@ shared class Database : IDirect, IDisposable
     {
         auto tr = createTransaction();
         return tr.doTransaction(func, commitCallback);
-    };
+    }
 }

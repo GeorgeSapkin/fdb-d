@@ -9,12 +9,12 @@ alias SimpleWorkFunc = void delegate(shared IDirect tr);
 
 shared interface IDirect
 {
-    shared(Value) opIndex       (const Key key);
+    shared(Value) opIndex       (in Key key);
     RecordRange   opIndex       (RangeInfo info);
-    inout(Value)  opIndexAssign (inout(Value) value, const Key key);
+    inout(Value)  opIndexAssign (inout(Value) value, in Key key);
 
-    void clear(const Key key);
-    void clearRange(const RangeInfo info);
+    void clear(in Key key);
+    void clearRange(in RangeInfo info);
 
     void run(SimpleWorkFunc func);
 }

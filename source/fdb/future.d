@@ -34,7 +34,7 @@ shared class FutureBase(V)
     abstract shared(V) await();
 }
 
-shared class FunctionFuture(alias fun, Args...) :
+shared class FunctionFuture(alias fun, bool pool = true, Args...) :
     FutureBase!(ReturnType!fun),
 
     // dummy implementation to allow storage in KeyValueFuture
@@ -48,8 +48,10 @@ shared class FunctionFuture(alias fun, Args...) :
     {
         t = cast(shared)task!fun(args);
         auto localTask = cast(T)t;
-        //localTask.executeInNewThread;
-        taskPool.put(localTask);
+        static if (pool)
+            taskPool.put(localTask);
+        else
+            localTask.executeInNewThread;
     }
 
     void dispose() {}
@@ -285,10 +287,10 @@ shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
     }
 }
 
-alias KeyValueFutureCallback    = FutureCallback!RecordRange;
-alias ForEachCallback           = void delegate(Record record);
-alias BreakableForEachCallback  = void delegate(
-    Record record,
+alias KeyValueFutureCallback   = FutureCallback!RecordRange;
+alias ForEachCallback          = void delegate(Record record);
+alias BreakableForEachCallback = void delegate(
+    Record   record,
     out bool breakLoop);
 
 shared class KeyValueFuture
@@ -439,16 +441,14 @@ auto createFuture(F, Args...)(Args args)
     return future;
 }
 
-auto createFuture(alias fun, Args...)(Args args)
+auto createFuture(alias fun, bool pool = true, Args...)(Args args)
 if (isSomeFunction!fun)
 {
-    auto future = new shared FunctionFuture!(fun, Args)(args);
+    auto future = new shared FunctionFuture!(fun, pool, Args)(args);
     return future;
 }
 
-auto startOrCreateFuture(F, C, Args...)(
-    Args args,
-    C callback)
+auto startOrCreateFuture(F, C, Args...)(Args args, C callback)
 {
     auto future = createFuture!F(args);
     if (callback)
