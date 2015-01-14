@@ -32,33 +32,33 @@ struct RangeInfo
  * #define FDB_KEYSEL_FIRST_GREATER_OR_EQUAL(k, l) k, l, 0, 1
  */
 
-auto lastLessThan(const Key key)
+auto lastLessThan(in Key key)
 {
     return Selector(key.dup, false, 0);
 }
 
-auto lastLessOrEqual(const Key key)
+auto lastLessOrEqual(in Key key)
 {
     return Selector(key.dup, true, 0);
 }
 
-auto firstGreaterThan(const Key key)
+auto firstGreaterThan(in Key key)
 {
     return Selector(key.dup, true, 1);
 }
 
-auto firstGreaterOrEqual(const Key key)
+auto firstGreaterOrEqual(in Key key)
 {
     return Selector(key.dup, false, 1);
 }
 
 auto createRangeInfo(
-        const Key           begin,
-        const Key           end       = null,
-        const int           limit     = 0,
-        const StreamingMode mode      = StreamingMode.ITERATOR,
-        const bool          reverse   = false,
-        const int           iteration = 1)
+    in Key           begin,
+    in Key           end       = null,
+    in int           limit     = 0,
+    in StreamingMode mode      = StreamingMode.ITERATOR,
+    in bool          reverse   = false,
+    in int           iteration = 1)
 {
     auto sanBegin = sanitizeKey(begin, [ 0x00 ]);
     auto sanEnd   = sanitizeKey(end, sanBegin.getEndPrefix);
@@ -72,12 +72,12 @@ auto createRangeInfo(
 }
 
 auto createRangeInfoInclusive(
-        const Key           begin,
-        const Key           end       = null,
-        const int           limit     = 0,
-        const StreamingMode mode      = StreamingMode.ITERATOR,
-        const bool          reverse   = false,
-        const int           iteration = 1)
+    in Key           begin,
+    in Key           end       = null,
+    in int           limit     = 0,
+    in StreamingMode mode      = StreamingMode.ITERATOR,
+    in bool          reverse   = false,
+    in int           iteration = 1)
 {
     auto sanBegin = sanitizeKey(begin, [ 0x00 ]);
     auto sanEnd   = sanitizeKey(end, sanBegin.getEndPrefix);
@@ -91,12 +91,12 @@ auto createRangeInfoInclusive(
 }
 
 auto createRangeInfo(
-        Selector            beginSel,
-        Selector            endSel,
-        const int           limit     = 0,
-        const StreamingMode mode      = StreamingMode.ITERATOR,
-        const bool          reverse   = false,
-        const int           iteration = 1)
+    Selector         beginSel,
+    Selector         endSel,
+    in int           limit     = 0,
+    in StreamingMode mode      = StreamingMode.ITERATOR,
+    in bool          reverse   = false,
+    in int           iteration = 1)
 {
     auto rangeInfo = RangeInfo(
             beginSel, endSel, limit, mode, iteration, reverse);
@@ -106,14 +106,14 @@ auto createRangeInfo(
 alias range          = createRangeInfo;
 alias rangeInclusive = createRangeInfoInclusive;
 
-auto sanitizeKey(const Key key, lazy Key fallback) pure
+auto sanitizeKey(in Key key, lazy Key fallback) pure
 {
     if (key is null || key.empty)
         return fallback;
     return key;
 }
 
-auto getEndPrefix(const Key prefix) pure
+auto getEndPrefix(in Key prefix) pure
 in
 {
     enforce(prefix !is null);

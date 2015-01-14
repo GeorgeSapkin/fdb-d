@@ -24,7 +24,7 @@ private struct Packer
         bytes ~= TupleType.Nil;
     }
 
-    void write(const ubyte[] value)
+    void write(in ubyte[] value)
     {
         bytes ~= TupleType.Bytes;
         bytes ~= value
@@ -33,13 +33,13 @@ private struct Packer
         bytes ~= byteArrayEndMarker;
     }
 
-    void write(const string value)
+    void write(in string value)
     {
         bytes ~= TupleType.Utf8;
         bytes ~= cast(ubyte[])(value.toStringz[0..value.length + 1]);
     }
 
-    void write(T)(const T value)
+    void write(T)(in T value)
     if (isIntegral!T)
     in
     {
@@ -61,7 +61,7 @@ private struct Packer
         bytes ~= segmented.segments[0..size].retro.array;
     }
 
-    void write(T)(const T value)
+    void write(T)(in T value)
     if (isFloatingPoint!T)
     {
         auto filtered = (!value.isNaN) ? value : T.nan;
@@ -91,7 +91,7 @@ private struct Packer
         bytes ~= segmented.segments[].retro.array;
     }
 
-    void write(const UUID value)
+    void write(in UUID value)
     in
     {
         enforce(!value.data.empty);
@@ -102,14 +102,14 @@ private struct Packer
         bytes ~= value.data;
     }
 
-    void write(R)(const R r)
+    void write(R)(in R r)
     if(isInputRange!R && !is(R == string))
     {
-        foreach (const e; r)
+        foreach (e; r)
             write(e);
     }
 
-    void write(const Part part)
+    void write(in Part part)
     {
         foreach (T; Part.AllowedTypes)
             if (auto v = part.peek!T)
@@ -124,7 +124,7 @@ private struct Packer
 auto pack(T...)(T parts)
 {
     Packer w;
-    foreach (const p; parts)
+    foreach (p; parts)
         w.write(p);
     return w.bytes.idup;
 }

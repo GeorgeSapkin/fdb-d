@@ -62,9 +62,7 @@ private struct FDBVariant
         return _part;
     }
 
-    this(Range)(
-        const TupleType type,
-        Range           slice) pure
+    this(Range)(in TupleType type, Range slice) pure
     if (isInputRange!(Unqual!Range))
     in
     {
@@ -78,10 +76,7 @@ private struct FDBVariant
         this.slice = slice;
     }
 
-    this(Range)(
-        const TupleType type,
-        Range           buffer,
-        const ulong     offset) pure
+    this(Range)(in TupleType type, Range buffer, in ulong offset) pure
     if (isInputRange!(Unqual!Range))
     {
         if (type == TupleType.Nil ||

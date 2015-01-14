@@ -21,11 +21,11 @@ shared interface IReadOnlyTransaction
     @property bool isSnapshot();
 
     shared(KeyFuture) getKey(
-        const Selector    selector,
+        in Selector       selector,
         KeyFutureCallback callback = null);
 
     shared(ValueFuture) get(
-        const Key           key,
+        in Key              key,
         ValueFutureCallback callback = null);
 
     /**
@@ -39,7 +39,7 @@ shared interface IReadOnlyTransaction
     void addWriteConflictRange(RangeInfo info);
 
     shared(VoidFuture) onError(
-        const FDBException ex,
+        in FDBException    ex,
         VoidFutureCallback callback = null);
 
     shared(VersionFuture) getReadVersion(VersionFutureCallback callback = null);
@@ -47,10 +47,10 @@ shared interface IReadOnlyTransaction
     long getCommittedVersion();
 
     shared(StringFuture) getAddressesForKey(
-        const Key            key,
+        in Key               key,
         StringFutureCallback callback = null);
 
-    shared(Value) opIndex(const Key key);
+    shared(Value) opIndex(in Key key);
 
     RecordRange opIndex(RangeInfo info);
 }
@@ -75,9 +75,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         assert(db !is null);
     }
 
-    this(
-        TransactionHandle     th,
-        const shared Database db)
+    this(TransactionHandle th, in shared Database db)
     in
     {
         enforce(db !is null, "db must be set");
@@ -97,8 +95,8 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
 
     private this(
         shared TransactionHandle th,
-        const shared Database    db,
-        const bool               isSnapshot)
+        in shared Database       db,
+        in bool                  isSnapshot)
     in
     {
         enforce(db !is null, "db must be set");
@@ -131,7 +129,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         th = null;
     }
 
-    void set(const Key key, const Value value) const
+    void set(in Key key, in Value value) const
     in
     {
         enforce(key !is null);
@@ -178,7 +176,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
             fdb_transaction_reset(cast(TransactionHandle)th);
     }
 
-    void clear(const Key key) const
+    void clear(in Key key) const
     in
     {
         enforce(key !is null);
@@ -192,7 +190,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
             cast(int)key.length);
     }
 
-    void clearRange(const RangeInfo info) const
+    void clearRange(in RangeInfo info) const
     in
     {
         enforce(!info.begin.key.empty);
@@ -209,7 +207,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     }
 
     shared(KeyFuture) getKey(
-        const Selector    selector,
+        in Selector       selector,
         KeyFutureCallback callback = null)
     {
         auto fh = fdb_transaction_get_key(
@@ -226,9 +224,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         return future;
     }
 
-    shared(ValueFuture) get(
-        const Key           key,
-        ValueFutureCallback callback = null)
+    shared(ValueFuture) get(in Key key, ValueFutureCallback callback = null)
     in
     {
         enforce(key !is null);
@@ -285,7 +281,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         return future;
     }
 
-    auto watch(const Key key, VoidFutureCallback callback = null)
+    auto watch(in Key key, VoidFutureCallback callback = null)
     in
     {
         enforce(key !is null);
@@ -304,8 +300,8 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     }
 
     private void addConflictRange(
-        RangeInfo               info,
-        const ConflictRangeType type) const
+        RangeInfo            info,
+        in ConflictRangeType type) const
     in
     {
         enforce(!info.begin.key.empty);
@@ -334,7 +330,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     }
 
     shared(VoidFuture) onError(
-        const FDBException ex,
+        in FDBException    ex,
         VoidFutureCallback callback = null)
     {
         auto fh = fdb_transaction_on_error(
@@ -346,7 +342,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         return future;
     }
 
-    void setReadVersion(const int ver) const
+    void setReadVersion(in int ver) const
     in
     {
         enforce(ver > 0);
@@ -379,7 +375,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     }
 
     shared(StringFuture) getAddressesForKey(
-        const Key            key,
+        in Key               key,
         StringFutureCallback callback = null)
     in
     {
@@ -412,7 +408,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * of the value. However, this offset technique requires that you know the
      * addition will not cause the integer field within the value to overflow.
      */
-    void add(const Key key, const Value value) const
+    void add(in Key key, in Value value) const
     {
         callAtomicOperation(key, value, MutationType.ADD);
     }
@@ -427,7 +423,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitAnd(const Key key, const Value value) const
+    void bitAnd(in Key key, in Value value) const
     {
         callAtomicOperation(key, value, MutationType.BIT_AND);
     }
@@ -442,7 +438,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitOr(const Key key, const Value value) const
+    void bitOr(in Key key, in Value value) const
     {
         callAtomicOperation(key, value, MutationType.BIT_OR);
     }
@@ -457,15 +453,15 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * the existing value in the database, the existing value is truncated to
      * match the length of ``param``.
      */
-    void bitXor(const Key key, const Value value) const
+    void bitXor(in Key key, in Value value) const
     {
         callAtomicOperation(key, value, MutationType.BIT_XOR);
     }
 
     private void callAtomicOperation(
-        const Key          key,
-        const Value        value,
-        const MutationType type) const
+        in Key          key,
+        in Value        value,
+        in MutationType type) const
     in
     {
         enforce(key !is null);
@@ -634,7 +630,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * transaction can be used again after it is reset.
      * Parameter: (Int) value in milliseconds of timeout
      */
-    void setTimeout(const long value) const
+    void setTimeout(in long value) const
     {
         setTransactionOption(TransactionOption.TIMEOUT, value);
     }
@@ -645,12 +641,12 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * ``[-1, INT_MAX]``. If set to -1, will disable the retry limit.
      * Parameter: (Int) number of times to retry
      */
-    void setRetryLimit(const long value) const
+    void setRetryLimit(in long value) const
     {
         setTransactionOption(TransactionOption.RETRY_LIMIT, value);
     }
 
-    private void setTransactionOption(const TransactionOption op) const
+    private void setTransactionOption(in TransactionOption op) const
     {
         auto err = fdb_transaction_set_option(
             cast(TransactionHandle)th,
@@ -661,8 +657,8 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     }
 
     private void setTransactionOption(
-        const TransactionOption op,
-        const long              value) const
+        in TransactionOption op,
+        in long              value) const
     {
         auto err = fdb_transaction_set_option(
             cast(TransactionHandle)th,
@@ -672,7 +668,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         enforceError(err);
     }
 
-    shared(Value) opIndex(const Key key)
+    shared(Value) opIndex(in Key key)
     {
         auto f     = get(key);
         auto value = f.await;
@@ -686,7 +682,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         return value;
     }
 
-    inout(Value) opIndexAssign(inout(Value) value, const Key key)
+    inout(Value) opIndexAssign(inout(Value) value, in Key key)
     {
         set(key, value);
         return value;
@@ -709,19 +705,14 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         future.await;
     };
 
-    auto doTransaction(
-        WorkFunc           func,
-        VoidFutureCallback commitCallback)
+    auto doTransaction(WorkFunc func, VoidFutureCallback commitCallback)
     {
         auto future = createFuture!retryLoop(this, func, commitCallback);
         return future;
     };
 }
 
-void retryLoop(
-    shared Transaction tr,
-    WorkFunc           func,
-    VoidFutureCallback cb)
+void retryLoop(shared Transaction tr, WorkFunc func, VoidFutureCallback cb)
 {
     try
     {

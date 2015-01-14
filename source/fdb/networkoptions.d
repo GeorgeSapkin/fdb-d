@@ -29,7 +29,7 @@ class NetworkOptions
      * Parameter: (String) path to output directory (or NULL for current working
      * directory)
      */
-    static void setTraceEnable(const string value)
+    static void setTraceEnable(in string value)
     {
         setNetworkOption(NetworkOption.TRACE_ENABLE, value);
     }
@@ -37,7 +37,7 @@ class NetworkOptions
     /* Set internal tuning or debugging knobs
      * Parameter: (String) knob_name=knob_value
      */
-    static void setKnob(const string value)
+    static void setKnob(in string value)
     {
         setNetworkOption(NetworkOption.KNOB, value);
     }
@@ -46,7 +46,7 @@ class NetworkOptions
      * other TLS options
      * Parameter: (String) file path or linker-resolved name
      */
-    static void setTlsPlugin(const string value)
+    static void setTlsPlugin(in string value)
     {
         setNetworkOption(NetworkOption.TLS_PLUGIN, value);
     }
@@ -54,7 +54,7 @@ class NetworkOptions
     /* Set the certificate chain
      * Parameter: (Bytes) certificates
      */
-    static void setTlsCertBytes(const ubyte[] value)
+    static void setTlsCertBytes(in ubyte[] value)
     {
         setNetworkOption(NetworkOption.TLS_CERT_BYTES, value);
     }
@@ -62,7 +62,7 @@ class NetworkOptions
     /* Set the file from which to load the certificate chain
      * Parameter: (String) file path
      */
-    static void setTlsCertPath(const string value)
+    static void setTlsCertPath(in string value)
     {
         setNetworkOption(NetworkOption.TLS_CERT_PATH, value);
     }
@@ -70,7 +70,7 @@ class NetworkOptions
     /* Set the private key corresponding to your own certificate
      * Parameter: (Bytes) key
      */
-    static void setTlsKeyBytes(const ubyte[] value)
+    static void setTlsKeyBytes(in ubyte[] value)
     {
         setNetworkOption(NetworkOption.TLS_KEY_BYTES, value);
     }
@@ -79,7 +79,7 @@ class NetworkOptions
      * certificate
      * Parameter: (String) file path
      */
-    static void setTlsKeyPath(const string value)
+    static void setTlsKeyPath(in string value)
     {
         setNetworkOption(NetworkOption.TLS_KEY_PATH, value);
     }
@@ -87,18 +87,16 @@ class NetworkOptions
     /* Set the peer certificate field verification criteria
      * Parameter: (Bytes) verification pattern
      */
-    static void setTlsVerifyPeers(const ubyte[] value) {
+    static void setTlsVerifyPeers(in ubyte[] value) {
         setNetworkOption(NetworkOption.TLS_VERIFY_PEERS, value);
     }
 
-    private static void setNetworkOption(const NetworkOption op)
+    private static void setNetworkOption(in NetworkOption op)
     {
         enforceError(fdb_network_set_option(op, null, 0));
     }
 
-    private static void setNetworkOption(
-        const NetworkOption op,
-        const ubyte[]       value)
+    private static void setNetworkOption(in NetworkOption op, in ubyte[] value)
     {
         const auto err = fdb_network_set_option(
             op,
@@ -107,9 +105,7 @@ class NetworkOptions
         enforceError(err);
     }
 
-    private static void setNetworkOption(
-        const NetworkOption op,
-        const string        value)
+    private static void setNetworkOption(in NetworkOption op, in string value)
     {
         const auto err = fdb_network_set_option(
             op,

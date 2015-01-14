@@ -80,7 +80,7 @@ shared class Database : IDirect, IDisposable
      * random pattern. Defaults to 100000.
      * Parameter: (Int) Max location cache entries
      */
-    void setLocationCacheSize(const long value) const
+    void setLocationCacheSize(in long value) const
     {
         setDatabaseOption(DatabaseOption.LOCATION_CACHE_SIZE, value);
     }
@@ -92,7 +92,7 @@ shared class Database : IDirect, IDisposable
      * Defaults to 10000 and cannot be larger than 1000000.
      * Parameter: (Int) Max outstanding watches
      */
-    void setMaxWatches(const long value) const
+    void setMaxWatches(in long value) const
     {
         setDatabaseOption(DatabaseOption.MAX_WATCHES, value);
     }
@@ -103,7 +103,7 @@ shared class Database : IDirect, IDisposable
      * balancing.
      * Parameter: (String) Hexadecimal ID
      */
-    void setMachineId(const string value) const
+    void setMachineId(in string value) const
     {
         setDatabaseOption(DatabaseOption.MACHINE_ID, value);
     }
@@ -114,14 +114,12 @@ shared class Database : IDirect, IDisposable
      * balancing.
      * Parameter: (String) Hexadecimal ID
      */
-    void setDatacenterId(const string value) const
+    void setDatacenterId(in string value) const
     {
         setDatabaseOption(DatabaseOption.DATACENTER_ID, value);
     }
 
-    private void setDatabaseOption(
-        const DatabaseOption op,
-        const long           value) const
+    private void setDatabaseOption(in DatabaseOption op, in long value) const
     {
         const auto err = fdb_database_set_option(
             cast(DatabaseHandle)dbh,
@@ -131,9 +129,7 @@ shared class Database : IDirect, IDisposable
         enforceError(err);
     }
 
-    private void setDatabaseOption(
-        const DatabaseOption op,
-        const string         value) const
+    private void setDatabaseOption(in DatabaseOption op, in string value) const
     {
         const auto err = fdb_database_set_option(
             cast(DatabaseHandle)dbh,
@@ -143,7 +139,7 @@ shared class Database : IDirect, IDisposable
         enforceError(err);
     }
 
-    shared(Value) opIndex(const Key key)
+    shared(Value) opIndex(in Key key)
     {
         auto tr    = createTransaction();
         auto value = tr[key];
@@ -159,7 +155,7 @@ shared class Database : IDirect, IDisposable
         return value;
     }
 
-    inout(Value) opIndexAssign(inout(Value) value, const Key key)
+    inout(Value) opIndexAssign(inout(Value) value, in Key key)
     {
         auto tr = createTransaction();
         tr[key] = value;
@@ -167,13 +163,13 @@ shared class Database : IDirect, IDisposable
         return value;
     }
 
-    void clear(const Key key)
+    void clear(in Key key)
     {
         auto tr = createTransaction();
         tr.clear(key);
     }
 
-    void clearRange(const RangeInfo info)
+    void clearRange(in RangeInfo info)
     {
         auto tr = createTransaction();
         tr.clearRange(info);

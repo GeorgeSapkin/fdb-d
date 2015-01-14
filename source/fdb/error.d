@@ -98,17 +98,17 @@ class FDBException : Exception
     }
 }
 
-auto message(const fdb_error_t err)
+auto message(in fdb_error_t err)
 {
     return fdb_get_error(err).to!string;
 }
 
-auto enforceError(const fdb_error_t err)
+auto enforceError(in fdb_error_t err)
 {
     return enforce(err == FDBError.SUCCESS, err.toException);
 }
 
-Exception toException(const fdb_error_t err)
+Exception toException(in fdb_error_t err)
 {
     return (err == FDBError.SUCCESS) ? null : new FDBException(err);
 }

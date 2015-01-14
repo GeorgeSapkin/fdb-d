@@ -42,7 +42,7 @@ struct RecordRange
 
     this(
         Record[]           records,
-        const bool         more,
+        in bool            more,
         RangeInfo          info,
         shared Transaction tr)
     {

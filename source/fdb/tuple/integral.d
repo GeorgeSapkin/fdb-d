@@ -3,7 +3,7 @@ module fdb.tuple.integral;
 import
     std.traits;
 
-ulong minsizeof(T)(const T value)
+ulong minsizeof(T)(in T value)
 if (isIntegral!T)
 {
     ulong compliment = (value > 0) ? value : -value;

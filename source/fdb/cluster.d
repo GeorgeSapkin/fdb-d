@@ -41,27 +41,28 @@ shared class Cluster : IDisposable
         ch = null;
     }
 
-    auto openDatabase(const string dbName = "DB")
+    auto openDatabase(in string dbName = "DB")
     out (result)
     {
         assert(result !is null);
     }
     body
     {
-        auto fh            = fdb_cluster_create_database(
+        auto fh = fdb_cluster_create_database(
             cast(ClusterHandle)ch,
             dbName.toStringz(),
             cast(int)dbName.length);
-        scope auto future  = createFuture!VoidFuture(fh);
+
+        scope auto future = createFuture!VoidFuture(fh);
         future.await;
 
         DatabaseHandle dbh;
-        auto err           = fdb_future_get_database(fh, &dbh);
+        auto err = fdb_future_get_database(fh, &dbh);
         enforceError(err);
 
-        auto db            = new shared Database(dbh, this);
+        auto db = new shared Database(dbh, this);
         synchronized (this)
-            databases     ~= db;
+            databases ~= db;
         return db;
     }
 }

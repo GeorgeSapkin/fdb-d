@@ -65,7 +65,7 @@ enum TupleType : ubyte
     Uuid128 = 48,
 }
 
-auto FDBsizeof(const TupleType type) pure
+auto FDBsizeof(in TupleType type) pure
 in
 {
     enforce(
@@ -95,22 +95,22 @@ body
     assert(0, "Type " ~ type ~ " is not supported");
 }
 
-bool isFDBIntegral(const TupleType type) pure @nogc
+bool isFDBIntegral(in TupleType type) pure @nogc
 {
     return type >= TupleType.IntNeg8 && type <= TupleType.IntPos8;
 }
 
-bool isFDBFloat(const TupleType type) pure @nogc
+bool isFDBFloat(in TupleType type) pure @nogc
 {
     return type == TupleType.Single;
 }
 
-bool isFDBDouble(const TupleType type) pure @nogc
+bool isFDBDouble(in TupleType type) pure @nogc
 {
     return type == TupleType.Double;
 }
 
-bool isFDBUUID(const TupleType type) pure @nogc
+bool isFDBUUID(in TupleType type) pure @nogc
 {
     return type == TupleType.Uuid128;
 }

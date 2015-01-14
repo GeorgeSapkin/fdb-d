@@ -21,7 +21,7 @@ private shared bool apiSelected    = false;
 
 private auto FBD_RUNTIME_API_VERSION = FDB_API_VERSION;
 
-void selectAPIVersion(const int apiVersion)
+void selectAPIVersion(in int apiVersion)
 in
 {
     enforce(!apiSelected, "API version already selected");
@@ -56,7 +56,7 @@ body
         selectAPIVersion(FBD_RUNTIME_API_VERSION);
 
     NetworkOptions.init;
-    auto err       = fdb_setup_network();
+    auto err = fdb_setup_network();
     enforceError(err);
 
     spawn(&networkThread);
@@ -72,16 +72,16 @@ body
 {
     if (!networkStarted) return;
 
-    auto err       = fdb_stop_network();
+    auto err = fdb_stop_network();
     enforceError(err);
 
-    auto taskErr   = receiveOnly!fdb_error_t;
+    auto taskErr = receiveOnly!fdb_error_t;
     enforceError(taskErr);
 
     networkStarted = false;
 }
 
-auto createCluster(const string clusterFilePath = null)
+auto createCluster(in string clusterFilePath = null)
 in
 {
     assert(networkStarted);
@@ -92,18 +92,18 @@ out (result)
 }
 body
 {
-    auto fh           = fdb_create_cluster(clusterFilePath.toStringz);
+    auto fh = fdb_create_cluster(clusterFilePath.toStringz);
     scope auto future = createFuture!VoidFuture(fh);
     future.await;
 
     ClusterHandle ch;
-    auto err          = fdb_future_get_cluster(fh, &ch);
+    auto err = fdb_future_get_cluster(fh, &ch);
     enforceError(err);
 
     return new shared Cluster(ch);
 }
 
-auto open(const string clusterFilePath = null)
+auto open(in string clusterFilePath = null)
 {
     startNetwork;
     auto cluster = createCluster(clusterFilePath);
