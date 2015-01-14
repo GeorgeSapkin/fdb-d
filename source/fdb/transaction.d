@@ -568,13 +568,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         setTransactionOption(TransactionOption.DURABILITY_RISKY);
     }
 
-    // Parameter: Option takes no parameter
-    void setDurabilityDevNullIsWebScale() const
-    {
-        setTransactionOption(
-            TransactionOption.DURABILITY_DEV_NULL_IS_WEB_SCALE);
-    }
-
     /**
      * Specifies that this transaction should be treated as highest priority and
      * that lower priority transactions should block behind this one. Use is
