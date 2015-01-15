@@ -114,7 +114,6 @@ enum TransactionOption : uint
     /**
      * The transaction, if not self-conflicting, may be committed a second time
      * after commit succeeds, in the event of a fault
-     * Parameter: Option takes no parameter
      */
     CAUSAL_WRITE_RISKY                 = 10,
 
@@ -122,14 +121,10 @@ enum TransactionOption : uint
      * The read version will be committed, and usually will be the latest
      * committed, but might not be the latest committed in the event of a fault
      * or partition
-     * Parameter: Option takes no parameter
      */
     CAUSAL_READ_RISKY                  = 20,
 
-    /**
-     * Parameter: Option takes no parameter
-     */
-    CAUSAL_READ_DISABLE,
+    CAUSAL_READ_DISABLE                = 21,
 
     /**
      * The next write performed on this transaction will not generate a write
@@ -139,13 +134,9 @@ enum TransactionOption : uint
      * shared between multiple threads. When setting this option, write conflict
      * ranges will be disabled on the next write operation, regardless of what
      * thread it is on.
-     * Parameter: Option takes no parameter
      */
     NEXT_WRITE_NO_WRITE_CONFLICT_RANGE = 30,
 
-    /**
-     * Parameter: Option takes no parameter
-     */
     CHECK_WRITES_ENABLE                = 50,
 
     /**
@@ -155,9 +146,8 @@ enum TransactionOption : uint
      * small performance benefit for the client, but also disables a number of
      * client-side optimizations which are beneficial for transactions which
      * tend to read and write the same keys within a single transaction.
-     * Parameter: Option takes no parameter
      */
-    READ_YOUR_WRITES_DISABLE,
+    READ_YOUR_WRITES_DISABLE           = 51,
 
     /**
      * Disables read-ahead caching for range reads. Under normal operation, a
@@ -165,30 +155,17 @@ enum TransactionOption : uint
      * reads are used to page through a series of data one row at a time (i.e.
      * if a range read with a one row limit is followed by another one row range
      * read starting immediately after the result of the first).
-     * Parameter: Option takes no parameter
      */
-    READ_AHEAD_DISABLE,
+    READ_AHEAD_DISABLE                 = 52,
 
-    /**
-     * Parameter: Option takes no parameter
-     */
     DURABILITY_DATACENTER              = 110,
-
-    /**
-     * Parameter: Option takes no parameter
-     */
     DURABILITY_RISKY                   = 120,
-
-    /**
-     * Parameter: Option takes no parameter
-     */
     DURABILITY_DEV_NULL_IS_WEB_SCALE   = 130,
 
     /**
      * Specifies that this transaction should be treated as highest priority
      * and that lower priority transactions should block behind this one. Use is
      * discouraged outside of low-level tools
-     * Parameter: Option takes no parameter
      */
     PRIORITY_SYSTEM_IMMEDIATE          = 200,
 
@@ -196,27 +173,32 @@ enum TransactionOption : uint
      * Specifies that this transaction should be treated as low priority and
      * that default priority transactions should be processed first. Useful for
      * doing batch work simultaneously with latency-sensitive work
-     * Parameter: Option takes no parameter
      */
-    PRIORITY_BATCH,
+    PRIORITY_BATCH                     = 201,
 
     /**
      * This is a write-only transaction which sets the initial configuration
-     * Parameter: Option takes no parameter
      */
     INITIALIZE_NEW_DATABASE            = 300,
 
     /**
      * Allows this transaction to read and modify system keys (those that start
      * with the byte 0xFF)
-     * Parameter: Option takes no parameter
      */
-    ACCESS_SYSTEM_KEYS,
+    ACCESS_SYSTEM_KEYS                 = 301,
 
     /**
-     * Parameter: Option takes no parameter
+     * Allows this transaction to read system keys (those that start with the
+     * byte 0xFF)
      */
+    READ_SYSTEM_KEYS                   = 302,
+
     DEBUG_DUMP                         = 400,
+
+    /**
+     * Parameter: (String) Optional transaction name
+     */
+    DEBUG_RETRY_LOGGING                = 401,
 
     /**
      * Set a timeout in milliseconds which, when elapsed, will cause the
@@ -226,7 +208,7 @@ enum TransactionOption : uint
      * transaction can be used again after it is reset. Like all transaction
      * options, a timeout must be reset after a call to onError. This behavior
      * allows the user to make the timeout dynamic.
-     * Parameter: (Int) value in milliseconds of timeout
+     * Parameter: (Int32) value in milliseconds of timeout
      */
     TIMEOUT                            = 500,
 
@@ -236,9 +218,34 @@ enum TransactionOption : uint
      * ``[-1, INT_MAX]``. If set to -1, will disable the retry limit. Like all
      * transaction options, the retry limit must be reset after a call to
      * onError. This behavior allows the user to make the retry limit dynamic.
-     * Parameter: (Int) number of times to retry
+     * Parameter: (Int32) number of times to retry
      */
-    RETRY_LIMIT,
+    RETRY_LIMIT                        = 501,
+
+    /**
+     * Set the maximum amount of backoff delay incurred in the call to onError
+     * if the error is retryable.
+     * Defaults to 1000 ms. Valid parameter values are [0, int.MaxValue].
+     * Like all transaction options, the maximum retry delay must be reset
+     * after a call to onError.
+     * If the maximum retry delay is less than the current retry delay of the
+     * transaction, then the current retry delay will be clamped to the maximum
+     * retry delay.
+     * Parameter: (Int32) value in milliseconds of maximum delay
+     */
+    MAX_RETRY_DELAY                    = 502,
+
+    /**
+     * Snapshot read operations will see the results of writes done in the same
+     * transaction.
+     */
+    SNAPSHOT_READ_YOUR_WRITE_ENABLE    = 600,
+
+    /**
+     * Snapshot read operations will not see the results of writes done in the
+     * same transaction.
+     */
+    SNAPSHOT_READ_YOUR_WRITE_DISABLE   = 601,
 }
 
 enum StreamingMode : int

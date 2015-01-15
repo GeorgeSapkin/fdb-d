@@ -3,7 +3,8 @@ module fdb.transaction;
 import
     std.array,
     std.conv,
-    std.exception;
+    std.exception,
+    std.string;
 
 import
     fdb.database,
@@ -483,7 +484,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     /**
      * The transaction, if not self-conflicting, may be committed a second time
      * after commit succeeds, in the event of a fault
-     * Parameter: Option takes no parameter
      */
     void setCausalWriteRisky() const
     {
@@ -494,14 +494,12 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * The read version will be committed, and usually will be the latest
      * committed, but might not be the latest committed in the event of a fault
      * or partition
-     * Parameter: Option takes no parameter
      */
     void setCausalReadRisky() const
     {
         setTransactionOption(TransactionOption.CAUSAL_READ_RISKY);
     }
 
-    // Parameter: Option takes no parameter
     void setCausalReadDisable() const
     {
         setTransactionOption(TransactionOption.CAUSAL_READ_DISABLE);
@@ -515,7 +513,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * shared between multiple threads. When setting this option, write conflict
      * ranges will be disabled on the next write operation, regardless of what
      * thread it is on.
-     * Parameter: Option takes no parameter
      */
     void setNextWriteNoWriteConflictRange() const
     {
@@ -523,7 +520,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
             TransactionOption.NEXT_WRITE_NO_WRITE_CONFLICT_RANGE);
     }
 
-    // Parameter: Option takes no parameter
     void setCheckWritesEnable() const
     {
         setTransactionOption(TransactionOption.CHECK_WRITES_ENABLE);
@@ -536,7 +532,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * small performance benefit for the client, but also disables a number of
      * client-side optimizations which are beneficial for transactions which
      * tend to read and write the same keys within a single transaction.
-     * Parameter: Option takes no parameter
      */
     void setReadYourWritesDisable() const
     {
@@ -549,30 +544,16 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * reads are used to page through a series of data one row at a time (i.e.
      * if a range read with a one row limit is followed by another one row range
      * read starting immediately after the result of the first).
-     * Parameter: Option takes no parameter
      */
     void setReadAheadDisable() const
     {
         setTransactionOption(TransactionOption.READ_AHEAD_DISABLE);
     }
 
-    // Parameter: Option takes no parameter
-    void setDurabilityDatacenter() const
-    {
-        setTransactionOption(TransactionOption.DURABILITY_DATACENTER);
-    }
-
-    // Parameter: Option takes no parameter
-    void setDurabilityRisky() const
-    {
-        setTransactionOption(TransactionOption.DURABILITY_RISKY);
-    }
-
     /**
      * Specifies that this transaction should be treated as highest priority and
      * that lower priority transactions should block behind this one. Use is
      * discouraged outside of low-level tools
-     * Parameter: Option takes no parameter
      */
     void setPrioritySystemImmediate() const
     {
@@ -583,7 +564,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * Specifies that this transaction should be treated as low priority and
      * that default priority transactions should be processed first. Useful for
      * doing batch work simultaneously with latency-sensitive work
-     * Parameter: Option takes no parameter
      */
     void setPriorityBatch() const
     {
@@ -592,7 +572,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
 
     /**
      * This is a write-only transaction which sets the initial configuration
-     * Parameter: Option takes no parameter
      */
     void setInitializeNewDatabase() const
     {
@@ -602,17 +581,35 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     /**
      * Allows this transaction to read and modify system keys (those that start
      * with the byte 0xFF)
-     * Parameter: Option takes no parameter
      */
     void setAccessSystemKeys() const
     {
         setTransactionOption(TransactionOption.ACCESS_SYSTEM_KEYS);
     }
 
-    // Parameter: Option takes no parameter
+    /**
+     * Allows this transaction to read system keys (those that start with the
+     * byte 0xFF)
+     */
+    void setReadSystemKeys() const
+    {
+        setTransactionOption(TransactionOption.READ_SYSTEM_KEYS);
+    }
+
     void setDebugDump() const
     {
         setTransactionOption(TransactionOption.DEBUG_DUMP);
+    }
+
+    /**
+     * Params:
+     *      transactionName = Optional transaction name
+     */
+    void setDebugRetryLogging(in string transactionName = null) const
+    {
+        setTransactionOption(
+            TransactionOption.DEBUG_RETRY_LOGGING,
+            transactionName);
     }
 
     /**
@@ -621,9 +618,10 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * ``[0, INT_MAX]``. If set to 0, will disable all timeouts. All pending and
      * any future uses of the transaction will throw an exception. The
      * transaction can be used again after it is reset.
-     * Parameter: (Int) value in milliseconds of timeout
+     * Params:
+     *      value = value in milliseconds of timeout
      */
-    void setTimeout(in long value) const
+    void setTimeout(in int value) const
     {
         setTransactionOption(TransactionOption.TIMEOUT, value);
     }
@@ -632,11 +630,48 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
      * Set a maximum number of retries after which additional calls to onError
      * will throw the most recently seen error code. Valid parameter values are
      * ``[-1, INT_MAX]``. If set to -1, will disable the retry limit.
-     * Parameter: (Int) number of times to retry
+     * Params:
+     *      value = number of times to retry
      */
-    void setRetryLimit(in long value) const
+    void setRetryLimit(in int value) const
     {
         setTransactionOption(TransactionOption.RETRY_LIMIT, value);
+    }
+
+    /**
+     * Set the maximum amount of backoff delay incurred in the call to onError
+     * if the error is retryable.
+     * Defaults to 1000 ms. Valid parameter values are [0, int.MaxValue].
+     * Like all transaction options, the maximum retry delay must be reset
+     * after a call to onError.
+     * If the maximum retry delay is less than the current retry delay of the
+     * transaction, then the current retry delay will be clamped to the maximum
+     * retry delay.
+     * Params:
+     *      value = value in milliseconds of maximum delay
+     */
+    void setMaxRetryDelayLimit(in int value) const
+    {
+        setTransactionOption(TransactionOption.MAX_RETRY_DELAY, value);
+    }
+
+    /**
+     * Snapshot read operations will see the results of writes done in the same
+     * transaction.
+     */
+    void setSnapshotReadYourWriteEnable() const
+    {
+        setTransactionOption(TransactionOption.SNAPSHOT_READ_YOUR_WRITE_ENABLE);
+    }
+
+    /**
+     * Snapshot read operations will not see the results of writes done in the
+     * same transaction.
+     */
+    void setSnapshotReadYourWriteDisable() const
+    {
+        setTransactionOption(
+            TransactionOption.SNAPSHOT_READ_YOUR_WRITE_DISABLE);
     }
 
     private void setTransactionOption(in TransactionOption op) const
@@ -651,12 +686,24 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
 
     private void setTransactionOption(
         in TransactionOption op,
-        in long              value) const
+        in int               value) const
     {
         auto err = fdb_transaction_set_option(
             cast(TransactionHandle)th,
             op,
             cast(immutable(char)*)&value,
+            cast(int)value.sizeof);
+        enforceError(err);
+    }
+
+    private void setTransactionOption(
+        in TransactionOption op,
+        in string            value) const
+    {
+        auto err = fdb_transaction_set_option(
+            cast(TransactionHandle)th,
+            op,
+            value.toStringz,
             cast(int)value.sizeof);
         enforceError(err);
     }
