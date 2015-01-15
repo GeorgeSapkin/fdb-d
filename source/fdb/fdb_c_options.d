@@ -358,6 +358,28 @@ enum MutationType : uint
      * match the length of ``param``.
      */
     BIT_XOR = 8,
+
+    /**
+     * Performs a little-endian comparison of byte strings.
+     * If the existing value in the database is not present or shorter than
+     * ``param``, it is first extended to the length of ``param`` with zero
+     * bytes.
+     * If ``param`` is shorter than the existing value in the database, the
+     * existing value is truncated to match the length of ``param``.
+     * The larger of the two values is then stored in the database.
+     */
+    MAX = 12,
+
+    /**
+     * Performs a little-endian comparison of byte strings.
+     * If the existing value in the database is not present or shorter than
+     * ``param``, it is first extended to the length of ``param`` with zero
+     * bytes.
+     * If ``param`` is shorter than the existing value in the database, the
+     * existing value is truncated to match the length of ``param``.
+     * The smaller of the two values is then stored in the database.
+     */
+    MIN = 13
 }
 
 enum ConflictRangeType : uint

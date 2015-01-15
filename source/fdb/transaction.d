@@ -414,9 +414,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         callAtomicOperation(key, value, MutationType.ADD);
     }
 
-    // Deprecated
-    // ADD_MUTATION_TYPE("and", 6);
-
     /**
      * Performs a bitwise ``and`` operation.  If the existing value in the
      * database is not present or shorter than ``param``, it is first extended
@@ -428,9 +425,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     {
         callAtomicOperation(key, value, MutationType.BIT_AND);
     }
-
-    // Deprecated
-    //ADD_MUTATION_TYPE("or", 7);
 
     /**
      * Performs a bitwise ``or`` operation.  If the existing value in the
@@ -444,9 +438,6 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         callAtomicOperation(key, value, MutationType.BIT_OR);
     }
 
-    // Deprecated
-    // ADD_MUTATION_TYPE("xor", 8);
-
     /**
      * Performs a bitwise ``xor`` operation.  If the existing value in the
      * database is not present or shorter than ``param``, it is first extended
@@ -457,6 +448,34 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     void bitXor(in Key key, in Value value) const
     {
         callAtomicOperation(key, value, MutationType.BIT_XOR);
+    }
+
+    /**
+     * Performs a little-endian comparison of byte strings.
+     * If the existing value in the database is not present or shorter than
+     * ``param``, it is first extended to the length of ``param`` with zero
+     * bytes.
+     * If ``param`` is shorter than the existing value in the database, the
+     * existing value is truncated to match the length of ``param``.
+     * The larger of the two values is then stored in the database.
+     */
+    void bitMax(in Key key, in Value value) const
+    {
+        callAtomicOperation(key, value, MutationType.MAX);
+    }
+
+    /**
+     * Performs a little-endian comparison of byte strings.
+     * If the existing value in the database is not present or shorter than
+     * ``param``, it is first extended to the length of ``param`` with zero
+     * bytes.
+     * If ``param`` is shorter than the existing value in the database, the
+     * existing value is truncated to match the length of ``param``.
+     * The smaller of the two values is then stored in the database.
+     */
+    void bitMin(in Key key, in Value value) const
+    {
+        callAtomicOperation(key, value, MutationType.MIN);
     }
 
     private void callAtomicOperation(
