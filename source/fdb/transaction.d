@@ -723,7 +723,7 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
             cast(TransactionHandle)th,
             op,
             value.toStringz,
-            cast(int)value.sizeof);
+            cast(int)value.length);
         enforceError(err);
     }
 

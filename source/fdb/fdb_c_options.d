@@ -3,26 +3,47 @@ module fdb.fdb_c_options;
 enum NetworkOption : uint
 {
     // deprecated
-    NONE              = 0,
+    NONE               = 0,
 
     // deprecated
-    LOCAL_ADDRESS     = 10,
+    LOCAL_ADDRESS      = 10,
 
     // deprecated
-    CLUSTER_FILE      = 20,
+    CLUSTER_FILE       = 20,
 
     /**
      * Enables trace output to a file in a directory of the clients choosing
-     * Parameter: (String) path to output directory (or NULL for current working
-     * directory)
+     * Parameter: (String) path to output directory (or NULL for current
+     * working directory)
      */
-    TRACE_ENABLE      = 30,
+    TRACE_ENABLE       = 30,
+
+    /**
+     * Sets the maximum size in bytes of a single trace output file.
+     * This value should be in the range ``[0, long.max]``.
+     * If the value is set to 0, there is no limit on individual file size.
+     * The default is a maximum size of 10,485,760 bytes.
+     * Parameter: (Int64) max size of a single trace output file
+     */
+    TRACE_ROLL_SIZE    = 31,
+
+    /**
+     * Sets the maximum size of a all the trace output files put together.
+     * This value should be in the range ``[0, long.max]``.
+     * If the value is set to 0, there is no limit on the total size of the
+     * files.
+     * The default is a maximum size of 104,857,600 bytes.
+     * If the default roll size is used, this means that a maximum of 10 trace
+     * files will be written at a time.
+     * Parameter: (Int64) max total size of trace files
+     */
+    TRACE_MAX_LOG_SIZE = 32,
 
     /**
      * Set internal tuning or debugging knobs
      * Parameter: (String) knob_name=knob_value
      */
-    KNOB              = 40,
+    KNOB               = 40,
 
     /**
      * Set the TLS plugin to load. This option, if used, must be set before any
@@ -47,11 +68,11 @@ enum NetworkOption : uint
      * Set the private key corresponding to your own certificate
      * Parameter: (Bytes) key
      */
-    TLS_KEY_BYTES     = 45,
+    TLS_KEY_BYTES      = 45,
 
     /**
-     * Set the file from which to load the private key corresponding to your own
-     * certificate
+     * Set the file from which to load the private key corresponding to your
+     * own certificate
      * Parameter: (String) file path
      */
     TLS_KEY_PATH,
