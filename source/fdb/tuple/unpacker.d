@@ -128,7 +128,7 @@ private struct FDBVariant
     {
         auto chars = (cast(char[])slice);
         auto size  = chars.indexOf(0, 0);
-        if (size > 0)
+        if (size > -1)
         {
             chars   = chars[0..size];
             _length = size + 1;
