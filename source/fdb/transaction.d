@@ -755,13 +755,16 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
             cb(null);
         };
 
+        shared Exception exception;
         VoidFutureCallback cb = (ex)
         {
-            enforce(ex is null, ex);
+            exception = cast(shared)ex;
         };
 
         auto future = createFuture!retryLoop(this, wf, cb);
         future.await;
+
+        enforce(exception is null, cast(Exception)exception);
     };
 
     auto doTransaction(WorkFunc func, VoidFutureCallback commitCallback)
