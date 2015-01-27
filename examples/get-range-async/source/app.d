@@ -41,7 +41,7 @@ void main()
             auto tr2 = db.createTransaction;
 
             "Getting [SomeKey1, SomeKey2] range".writeln;
-            auto f  = tr2.getRange(rangeInclusive(key1, key2));
+            auto f  = tr2.getRangeAsync(rangeInclusive(key1, key2));
             f.forEach((Record record)
             {
                 "Got ".write;

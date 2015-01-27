@@ -55,12 +55,7 @@ shared class Database : IDirect, IDisposable
         dbh = null;
     }
 
-    auto createTransaction()
-    out (result)
-    {
-        assert(result !is null);
-    }
-    body
+    private auto createTransactionImpl()
     {
         TransactionHandle th;
         auto err = fdb_database_create_transaction(
@@ -69,6 +64,17 @@ shared class Database : IDirect, IDisposable
         enforceError(err);
 
         auto tr = new shared Transaction(th, this);
+        return tr;
+    }
+
+    auto createTransaction()
+    out (result)
+    {
+        assert(result !is null);
+    }
+    body
+    {
+        auto tr = createTransactionImpl();
         synchronized (this)
             transactions ~= tr;
         return tr;
@@ -141,15 +147,15 @@ shared class Database : IDirect, IDisposable
 
     shared(Value) opIndex(in Key key)
     {
-        auto tr    = createTransaction();
-        auto value = tr[key];
+        scope auto tr = createTransactionImpl();
+        auto value    = tr[key];
         tr.commit.await;
         return value;
     }
 
     RecordRange opIndex(RangeInfo info)
     {
-        auto tr    = createTransaction();
+        scope auto tr = createTransactionImpl();
         auto value = cast(RecordRange)tr[info];
         tr.commit.await;
         return value;
@@ -157,7 +163,7 @@ shared class Database : IDirect, IDisposable
 
     inout(Value) opIndexAssign(inout(Value) value, in Key key)
     {
-        auto tr = createTransaction();
+        scope auto tr = createTransactionImpl();
         tr[key] = value;
         tr.commit.await;
         return value;
@@ -165,19 +171,19 @@ shared class Database : IDirect, IDisposable
 
     void clear(in Key key)
     {
-        auto tr = createTransaction();
+        scope auto tr = createTransactionImpl();
         tr.clear(key);
     }
 
     void clearRange(in RangeInfo info)
     {
-        auto tr = createTransaction();
+        scope auto tr = createTransactionImpl();
         tr.clearRange(info);
     }
 
     void run(SimpleWorkFunc func)
     {
-        auto tr = createTransaction();
+        scope auto tr = createTransactionImpl();
         tr.run(func);
     }
 

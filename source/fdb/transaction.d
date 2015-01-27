@@ -21,33 +21,41 @@ shared interface IReadOnlyTransaction
 {
     @property bool isSnapshot();
 
-    shared(KeyFuture) getKey(
+    shared(Key) getKey(in Selector selector);
+    shared(KeyFuture) getKeyAsync(
         in Selector       selector,
         KeyFutureCallback callback = null);
 
-    shared(ValueFuture) get(
+    shared(Value) get(in Key key);
+    shared(ValueFuture) getAsync(
         in Key              key,
         ValueFutureCallback callback = null);
 
     /**
      * Returns: Key-value pairs within (begin, end) range
      */
-    shared(KeyValueFuture) getRange(
+    RecordRange getRange(RangeInfo info);
+    /// ditto
+    shared(KeyValueFuture) getRangeAsync(
         RangeInfo              info,
         KeyValueFutureCallback callback = null);
 
     void addReadConflictRange(RangeInfo info);
     void addWriteConflictRange(RangeInfo info);
 
-    shared(VoidFuture) onError(
+    void onError(in FDBException ex);
+    shared(VoidFuture) onErrorAsync(
         in FDBException    ex,
         VoidFutureCallback callback = null);
 
-    shared(VersionFuture) getReadVersion(VersionFutureCallback callback = null);
+    ulong getReadVersion();
+    shared(VersionFuture) getReadVersionAsync(
+        VersionFutureCallback callback = null);
 
     long getCommittedVersion();
 
-    shared(StringFuture) getAddressesForKey(
+    shared(string[]) getAddressesForKey(in Key key);
+    shared(StringFuture) getAddressesForKeyAsync(
         in Key               key,
         StringFutureCallback callback = null);
 
@@ -62,8 +70,8 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
 {
     private const Database    db;
     private TransactionHandle th;
-    private const bool _isSnapshot;
 
+    private const bool _isSnapshot;
     @property bool isSnapshot()
     {
         return _isSnapshot;
@@ -207,7 +215,23 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
             cast(int)info.end.key.length);
     }
 
-    shared(KeyFuture) getKey(
+    shared(Key) getKey(in Selector selector)
+    {
+        auto fh = fdb_transaction_get_key(
+            cast(TransactionHandle)th,
+            &selector.key[0],
+            cast(int)selector.key.length,
+            cast(fdb_bool_t)selector.orEqual,
+            selector.offset,
+            cast(fdb_bool_t)_isSnapshot);
+
+        scope auto future = createFuture!KeyFuture(fh, this);
+
+        auto value = future.await;
+        return value;
+    }
+
+    shared(KeyFuture) getKeyAsync(
         in Selector       selector,
         KeyFutureCallback callback = null)
     {
@@ -225,7 +249,27 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         return future;
     }
 
-    shared(ValueFuture) get(in Key key, ValueFutureCallback callback = null)
+    shared(Value) get(in Key key)
+    in
+    {
+        enforce(key !is null);
+        enforce(!key.empty);
+    }
+    body
+    {
+        auto fh = fdb_transaction_get(
+            cast(TransactionHandle)th,
+            &key[0],
+            cast(int)key.length,
+            cast(fdb_bool_t)_isSnapshot);
+
+        scope auto future = createFuture!ValueFuture(fh, this);
+
+        auto value = future.await;
+        return value;
+    }
+
+    shared(ValueFuture) getAsync(in Key key, ValueFutureCallback callback = null)
     in
     {
         enforce(key !is null);
@@ -248,7 +292,41 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
     /**
      * Returns: Key-value pairs within (begin, end) range
      */
-    shared(KeyValueFuture) getRange(
+    RecordRange getRange(RangeInfo info)
+    {
+        auto begin = sanitizeKey(info.begin.key, [ 0x00 ]);
+        auto end   = sanitizeKey(info.end.key, [ 0xff ]);
+
+        auto fh = fdb_transaction_get_range(
+            cast(TransactionHandle)cast(TransactionHandle)th,
+
+            &begin[0],
+            cast(int)begin.length,
+            cast(fdb_bool_t)info.begin.orEqual,
+            info.begin.offset,
+
+            &end[0],
+            cast(int)end.length,
+            cast(fdb_bool_t)info.end.orEqual,
+            info.end.offset,
+
+            info.limit,
+            0,
+            info.mode,
+            info.iteration,
+            cast(fdb_bool_t)_isSnapshot,
+            info.reverse);
+
+        scope auto future = createFuture!KeyValueFuture(fh, this, info);
+
+        auto value = cast(RecordRange)future.await;
+        return value;
+    }
+
+    /**
+     * Returns: Key-value pairs within (begin, end) range
+     */
+    shared(KeyValueFuture) getRangeAsync(
         RangeInfo              info,
         KeyValueFutureCallback callback = null)
     {
@@ -330,7 +408,17 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         addConflictRange(info, ConflictRangeType.WRITE);
     }
 
-    shared(VoidFuture) onError(
+    void onError(in FDBException ex)
+    {
+        auto fh = fdb_transaction_on_error(
+            cast(TransactionHandle)th,
+            ex.err);
+
+        scope auto future = createFuture!VoidFuture(fh, this);
+        future.await;
+    }
+
+    shared(VoidFuture) onErrorAsync(
         in FDBException    ex,
         VoidFutureCallback callback = null)
     {
@@ -355,7 +443,18 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
             ver);
     }
 
-    shared(VersionFuture) getReadVersion(VersionFutureCallback callback = null)
+    ulong getReadVersion()
+    {
+        auto fh = fdb_transaction_get_read_version(
+            cast(TransactionHandle)th);
+
+        scope auto future = createFuture!VersionFuture(fh, this);
+
+        auto value = future.await;
+        return value;
+    }
+
+    shared(VersionFuture) getReadVersionAsync(VersionFutureCallback callback = null)
     {
         auto fh = fdb_transaction_get_read_version(
             cast(TransactionHandle)th);
@@ -375,7 +474,26 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
         return ver;
     }
 
-    shared(StringFuture) getAddressesForKey(
+    shared(string[]) getAddressesForKey(in Key key)
+    in
+    {
+        enforce(key !is null);
+        enforce(!key.empty);
+    }
+    body
+    {
+        auto fh = fdb_transaction_get_addresses_for_key(
+            cast(TransactionHandle)th,
+            &key[0],
+            cast(int)key.length);
+
+        scope auto future = createFuture!StringFuture(fh, this);
+
+        auto value = future.await;
+        return value;
+    }
+
+    shared(StringFuture) getAddressesForKeyAsync(
         in Key               key,
         StringFutureCallback callback = null)
     in
@@ -729,16 +847,12 @@ shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
 
     shared(Value) opIndex(in Key key)
     {
-        auto f     = get(key);
-        auto value = f.await;
-        return value;
+        return get(key);
     }
 
     RecordRange opIndex(RangeInfo info)
     {
-        auto f     = getRange(info);
-        auto value = cast(RecordRange)f.await;
-        return value;
+        return getRange(info);
     }
 
     inout(Value) opIndexAssign(inout(Value) value, in Key key)
@@ -809,7 +923,7 @@ private void onError(
 {
     if (auto fdbex = cast(FDBException)ex)
     {
-        tr.onError(fdbex, (retryErr)
+        tr.onErrorAsync(fdbex, (retryErr)
         {
             if (retryErr)
                 cb(retryErr);

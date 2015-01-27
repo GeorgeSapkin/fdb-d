@@ -45,7 +45,7 @@ void main()
             tr2.clearRange(prefix.pack.range);
 
             "Trying to get [SomeKey1, SomeKey2] range".writeln;
-            auto f  = tr2.getRange(rangeInclusive(key1, key2));
+            auto f  = tr2.getRangeAsync(rangeInclusive(key1, key2));
             f.forEach((Record record)
             {
                 // This shouldn't be hit
