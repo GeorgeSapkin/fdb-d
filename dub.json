@@ -5,6 +5,7 @@
 	"authors":     ["George Sapkin"],
 	"license":      "MIT",
 	"targetType":   "library",
+	"targetName":   "fdbd",
 	"libs":        ["fdb_c"],
 	"dependencies" : {
 	}
