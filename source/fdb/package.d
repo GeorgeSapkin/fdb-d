@@ -2,8 +2,8 @@ module fdb;
 
 public import
     fdb.cluster,
+    fdb.context,
     fdb.database,
-    fdb.direct,
     fdb.error,
     fdb.fdb_c,
     fdb.fdb_c_options,

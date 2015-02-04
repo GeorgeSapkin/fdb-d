@@ -1,13 +1,13 @@
-module fdb.direct;
+module fdb.context;
 
 import
     fdb.fdb_c,
     fdb.range,
     fdb.rangeinfo;
 
-alias SimpleWorkFunc = void delegate(shared IDirect tr);
+alias SimpleWorkFunc = void delegate(shared IDatabaseContext ctx);
 
-shared interface IDirect
+shared interface IDatabaseContext
 {
     shared(Value) opIndex       (in Key key);
     RecordRange   opIndex       (RangeInfo info);

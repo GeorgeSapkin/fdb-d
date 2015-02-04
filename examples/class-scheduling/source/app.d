@@ -41,9 +41,9 @@ void addClass(T)(T tr, const string c)
     tr[pack("class", c)] = pack(100);
 }
 
-void init(shared IDirect db)
+void init(shared IDatabaseContext ctx)
 {
-    db.run((tr)
+    ctx.run((tr)
     {
         tr.clearRange(pack("attends").range);
         tr.clearRange(pack("class").range);
@@ -132,11 +132,11 @@ void simulateStudents(const uint i, const uint ops)
     }
 }
 
-auto availableClasses(shared IDirect db)
+auto availableClasses(shared IDatabaseContext ctx)
 {
     shared string[] classNames;
 
-    db.run((tr)
+    ctx.run((tr)
     {
         auto classes = tr[pack("class").range];
         foreach(c; classes)
@@ -147,9 +147,9 @@ auto availableClasses(shared IDirect db)
     return cast(string[]) classNames;
 }
 
-void signup(shared IDirect db, const string s, const string c)
+void signup(shared IDatabaseContext ctx, const string s, const string c)
 {
-    db.run((tr)
+    ctx.run((tr)
     {
         auto rec = pack("attends", s, c);
         if (tr[rec] !is null)
@@ -166,9 +166,9 @@ void signup(shared IDirect db, const string s, const string c)
     });
 }
 
-void drop(shared IDirect db, const string s, const string c)
+void drop(shared IDatabaseContext ctx, const string s, const string c)
 {
-    db.run((tr)
+    ctx.run((tr)
     {
         auto rec = pack("attends", s, c);
         if (tr[rec] is null)
@@ -181,12 +181,12 @@ void drop(shared IDirect db, const string s, const string c)
   }
 
 void switchClasses(
-    shared Database db,
-    const string    s,
-    const string    oldC,
-    const string    newC)
+    shared IDatabaseContext ctx,
+    const string            s,
+    const string            oldC,
+    const string            newC)
 {
-    db.run((tr)
+    ctx.run((tr)
     {
         drop(tr, s, oldC);
         signup(tr, s, newC);

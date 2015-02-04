@@ -8,7 +8,7 @@ import
 
 import
     fdb.cluster,
-    fdb.direct,
+    fdb.context,
     fdb.disposable,
     fdb.error,
     fdb.fdb_c,
@@ -18,7 +18,7 @@ import
     fdb.rangeinfo,
     fdb.transaction;
 
-shared class Database : IDirect, IDisposable
+shared class Database : IDatabaseContext, IDisposable
 {
     private const Cluster  cluster;
     private DatabaseHandle dbh;

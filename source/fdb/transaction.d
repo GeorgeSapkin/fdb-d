@@ -7,8 +7,8 @@ import
     std.string;
 
 import
+    fdb.context,
     fdb.database,
-    fdb.direct,
     fdb.disposable,
     fdb.error,
     fdb.fdb_c,
@@ -66,7 +66,7 @@ shared interface IReadOnlyTransaction
 
 alias WorkFunc = void delegate(shared Transaction tr, VoidFutureCallback cb);
 
-shared class Transaction : IDirect, IDisposable, IReadOnlyTransaction
+shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
 {
     private const Database    db;
     private TransactionHandle th;
