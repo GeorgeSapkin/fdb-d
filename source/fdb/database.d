@@ -155,7 +155,7 @@ shared class Database : IDatabaseContext, IDisposable
 
     RecordRange opIndex(RangeInfo info)
     {
-        scope auto tr = createTransactionImpl();
+        auto tr = createTransaction();
         auto value = cast(RecordRange)tr[info];
         tr.commit.await;
         return value;
