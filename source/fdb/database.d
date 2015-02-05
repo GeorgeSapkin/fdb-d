@@ -155,7 +155,7 @@ shared class Database : IDatabaseContext, IDisposable
 
     RecordRange opIndex(RangeInfo info)
     {
-        auto tr = createTransaction();
+        auto tr    = createTransaction();
         auto value = cast(RecordRange)tr[info];
         tr.commit.await;
         return value;
@@ -164,7 +164,7 @@ shared class Database : IDatabaseContext, IDisposable
     inout(Value) opIndexAssign(inout(Value) value, in Key key)
     {
         scope auto tr = createTransactionImpl();
-        tr[key] = value;
+        tr[key]       = value;
         tr.commit.await;
         return value;
     }
