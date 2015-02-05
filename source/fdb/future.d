@@ -127,7 +127,7 @@ class BasicFuture(V)
         auto complete = event.wait(5.seconds);
         enforceEx!FutureException(complete, "Operation timed out");
 
-        enforce(ex is null, cast(Exception) this.exception);
+        enforce(exception is null, cast(Exception) exception);
         static if (!is(V == void))
             return value;
     }
