@@ -22,14 +22,23 @@ import
 
 alias CompletionCallback = void delegate(Exception ex);
 
-private mixin template ExceptionCtorMixin() {
-    this(string msg = null, Throwable next = null) { super(msg, next); }
-    this(string msg, string file, size_t line, Throwable next = null) {
+private mixin template ExceptionCtorMixin()
+{
+    this(string msg = null, Throwable next = null)
+    {
+        super(msg, next);
+    }
+
+    this(string msg, string file, size_t line, Throwable next = null)
+    {
         super(msg, file, line, next);
     }
 }
 
-class FutureException : Exception { mixin ExceptionCtorMixin; }
+class FutureException : Exception
+{
+    mixin ExceptionCtorMixin;
+}
 
 shared class FutureBase(V)
 {
@@ -88,8 +97,8 @@ shared class FunctionFuture(alias fun, bool pool = true, Args...) :
 
 class BasicFuture(V)
 {
-    private Exception   exception;
-    private Semaphore   event;
+    private Exception exception;
+    private Semaphore event;
 
     static if (!is(V == void))
         private V       value;
@@ -102,33 +111,25 @@ class BasicFuture(V)
     static if (!is(V == void))
         void notify(Exception ex, ref V val)
         {
-            exception   = ex;
-            value       = val;
+            exception = ex;
+            value     = val;
             event.notify;
         }
     else
         void notify(Exception ex)
         {
-            exception   = ex;
+            exception = ex;
             event.notify;
         }
 
     V await()
     {
         auto complete = event.wait(5.seconds);
-        if (!complete)
-            throw new FutureException("Operation timed out");
+        enforceEx!FutureException(complete, "Operation timed out");
 
-        Exception ex = cast(Exception) this.exception;
-        if (ex is null)
-        {
-            static if (!is(V == void))
-                return value;
-            else
-                return;
-        }
-
-        throw ex;
+        enforce(ex is null, cast(Exception) this.exception);
+        static if (!is(V == void))
+            return value;
     }
 }
 
@@ -136,9 +137,9 @@ alias FutureCallback(V) = void delegate(Exception ex, V value);
 
 shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
 {
-    private alias SF    = shared FDBFutureBase!(C, V);
-    private alias SFH   = shared FutureHandle;
-    private alias SE    = shared fdb_error_t;
+    private alias SF  = shared FDBFutureBase!(C, V);
+    private alias SFH = shared FutureHandle;
+    private alias SE  = shared fdb_error_t;
 
     private FutureHandle fh;
     private Transaction  tr;
@@ -189,9 +190,9 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
         }
 
         static if (!is(V == void))
-            value  = cast(shared)extractValue(fh, err);
+            value = cast(shared)extractValue(fh, err);
 
-        exception  = cast(shared)err.toException;
+        exception = cast(shared)err.toException;
 
         enforce(exception is null, cast(Exception)exception);
         static if (!is(V == void))
