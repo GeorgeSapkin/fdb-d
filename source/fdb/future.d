@@ -22,6 +22,15 @@ import
 
 alias CompletionCallback = void delegate(Exception ex);
 
+private mixin template ExceptionCtorMixin() {
+    this(string msg = null, Throwable next = null) { super(msg, next); }
+    this(string msg, string file, size_t line, Throwable next = null) {
+        super(msg, file, line, next);
+    }
+}
+
+class FutureException : Exception { mixin ExceptionCtorMixin; }
+
 shared class FutureBase(V)
 {
     static if (!is(V == void))
@@ -106,10 +115,20 @@ class BasicFuture(V)
 
     V await()
     {
-        event.wait;
-        enforce(exception is null, cast(Exception)exception);
-        static if (!is(V == void))
-            return value;
+        auto complete = event.wait(5.seconds);
+        if (!complete)
+            throw new FutureException("Operation timed out");
+
+        Exception ex = cast(Exception) this.exception;
+        if (ex is null)
+        {
+            static if (!is(V == void))
+                return value;
+            else
+                return;
+        }
+
+        throw ex;
     }
 }
 
