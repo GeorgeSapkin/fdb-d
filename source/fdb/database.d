@@ -173,12 +173,14 @@ shared class Database : IDatabaseContext, IDisposable
     {
         scope auto tr = createTransactionImpl();
         tr.clear(key);
+        tr.commit.await;
     }
 
     void clearRange(in RangeInfo info)
     {
         scope auto tr = createTransactionImpl();
         tr.clearRange(info);
+        tr.commit.await;
     }
 
     void run(SimpleWorkFunc func)
