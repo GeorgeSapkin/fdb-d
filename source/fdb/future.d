@@ -153,6 +153,8 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
 
         static if (!is(V == void))
             value = cast(shared)extractValue(fh, err);
+        else
+            extractValue(fh, err);
 
         exception = cast(shared)err.toException;
 

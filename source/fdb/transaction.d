@@ -159,13 +159,9 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
         {
-            auto fh = fdb_transaction_commit(cast(TransactionHandle)th);
-
-            auto err = fdb_future_block_until_ready(fh);
-            enforceError(err);
-
-            err = fdb_future_get_error(fh);
-            enforceError(err);
+            auto fh     = fdb_transaction_commit(cast(TransactionHandle)th);
+            auto future = createFuture!VoidFuture(fh, this);
+            future.await;
         }
     }
 

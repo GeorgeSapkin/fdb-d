@@ -1,18 +1,14 @@
 module fdb.main;
 
 import
-    std.array,
     std.concurrency,
-    std.conv,
     std.exception,
-    std.format,
     std.string;
 
 import
     fdb.cluster,
     fdb.error,
     fdb.fdb_c,
-    fdb.fdb_c_options,
     fdb.future,
     fdb.networkoptions;
 
