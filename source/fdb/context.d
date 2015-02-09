@@ -5,7 +5,7 @@ import
     fdb.range,
     fdb.rangeinfo;
 
-alias SimpleWorkFunc = void delegate(shared IDatabaseContext ctx);
+alias WorkFunc = void delegate(shared IDatabaseContext ctx);
 
 shared interface IDatabaseContext
 {
@@ -16,5 +16,5 @@ shared interface IDatabaseContext
     void clear(in Key key);
     void clearRange(in RangeInfo info);
 
-    void run(SimpleWorkFunc func);
+    void run(in WorkFunc func);
 }

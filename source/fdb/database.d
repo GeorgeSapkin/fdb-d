@@ -149,7 +149,7 @@ shared class Database : IDatabaseContext, IDisposable
     {
         scope auto tr = createTransactionImpl();
         auto value    = tr[key];
-        tr.commit.await;
+        tr.commit;
         return value;
     }
 
@@ -157,7 +157,7 @@ shared class Database : IDatabaseContext, IDisposable
     {
         auto tr    = createTransaction();
         auto value = cast(RecordRange)tr[info];
-        tr.commit.await;
+        tr.commit;
         return value;
     }
 
@@ -165,7 +165,7 @@ shared class Database : IDatabaseContext, IDisposable
     {
         scope auto tr = createTransactionImpl();
         tr[key]       = value;
-        tr.commit.await;
+        tr.commit;
         return value;
     }
 
@@ -173,30 +173,25 @@ shared class Database : IDatabaseContext, IDisposable
     {
         scope auto tr = createTransactionImpl();
         tr.clear(key);
-        tr.commit.await;
+        tr.commit;
     }
 
     void clearRange(in RangeInfo info)
     {
         scope auto tr = createTransactionImpl();
         tr.clearRange(info);
-        tr.commit.await;
+        tr.commit;
     }
 
-    void run(SimpleWorkFunc func)
+    void run(in WorkFunc func)
     {
         scope auto tr = createTransactionImpl();
         tr.run(func);
     }
 
-    alias LoopFuture = shared FunctionFuture!(
-        retryLoop, true, ParameterTypeTuple!retryLoop);
-
-    LoopFuture doTransaction(
-        WorkFunc           func,
-        VoidFutureCallback commitCallback)
+    auto runAsync(in WorkFunc func, in VoidFutureCallback commitCallback)
     {
         auto tr = createTransaction();
-        return tr.doTransaction(func, commitCallback);
+        return tr.runAsync(func, commitCallback);
     }
 }

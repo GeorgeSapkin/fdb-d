@@ -95,44 +95,6 @@ shared class FunctionFuture(alias fun, bool pool = true, Args...) :
     }
 }
 
-class BasicFuture(V)
-{
-    private Exception exception;
-    private Semaphore event;
-
-    static if (!is(V == void))
-        private V       value;
-
-    this()
-    {
-        event = new Semaphore;
-    }
-
-    static if (!is(V == void))
-        void notify(Exception ex, ref V val)
-        {
-            exception = ex;
-            value     = val;
-            event.notify;
-        }
-    else
-        void notify(Exception ex)
-        {
-            exception = ex;
-            event.notify;
-        }
-
-    V await()
-    {
-        auto complete = event.wait(5.seconds);
-        enforceEx!FutureException(complete, "Operation timed out");
-
-        enforce(exception is null, cast(Exception) exception);
-        static if (!is(V == void))
-            return value;
-    }
-}
-
 alias FutureCallback(V) = void delegate(Exception ex, V value);
 
 shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
@@ -447,12 +409,6 @@ shared class WatchFuture : VoidFuture
         if (fh)
             fdb_future_cancel(cast(FutureHandle)fh);
     }
-}
-
-auto createFuture(T)()
-{
-    auto future = new BasicFuture!T;
-    return future;
 }
 
 auto createFuture(F, Args...)(Args args)

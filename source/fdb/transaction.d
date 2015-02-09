@@ -64,8 +64,6 @@ shared interface IReadOnlyTransaction
     RecordRange opIndex(RangeInfo info);
 }
 
-alias WorkFunc = void delegate(shared Transaction tr, VoidFutureCallback cb);
-
 shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
 {
     private const Database    db;
@@ -156,7 +154,22 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
             cast(int)value.length);
     }
 
-    auto commit(VoidFutureCallback callback = null)
+    void commit()
+    {
+        // cancel, commit and reset are mutually exclusive
+        synchronized (this)
+        {
+            auto fh = fdb_transaction_commit(cast(TransactionHandle)th);
+
+            auto err = fdb_future_block_until_ready(fh);
+            enforceError(err);
+
+            err = fdb_future_get_error(fh);
+            enforceError(err);
+        }
+    }
+
+    auto commitAsync(VoidFutureCallback callback = null)
     {
         // cancel, commit and reset are mutually exclusive
         synchronized (this)
@@ -410,9 +423,14 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
 
     void onError(in FDBException ex)
     {
+        onError(ex.err);
+    }
+
+    private void onError(const fdb_error_t err)
+    {
         auto fh = fdb_transaction_on_error(
             cast(TransactionHandle)th,
-            ex.err);
+            err);
 
         scope auto future = createFuture!VoidFuture(fh, this);
         future.await;
@@ -861,79 +879,69 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         return value;
     }
 
-    void run(SimpleWorkFunc func)
+    void run(in WorkFunc func)
     {
-        WorkFunc wf = (tr, cb)
-        {
-            func(tr);
-            cb(null);
-        };
-
-        shared Exception exception;
-        VoidFutureCallback cb = (ex)
-        {
-            exception = cast(shared)ex;
-        };
-
-        auto future = createFuture!retryLoop(this, wf, cb);
-        future.await;
-
-        enforce(exception is null, cast(Exception)exception);
+        retryLoop(this, func);
     };
 
-    auto doTransaction(WorkFunc func, VoidFutureCallback commitCallback)
+    auto runAsync(in WorkFunc func, in VoidFutureCallback commitCallback)
     {
-        auto future = createFuture!retryLoop(this, func, commitCallback);
+        auto future = createFuture!retryLoopAsync(this, func, commitCallback);
         return future;
     };
 }
 
-void retryLoop(shared Transaction tr, WorkFunc func, VoidFutureCallback cb)
+void retryLoop(shared Transaction tr, in WorkFunc func)
 {
-    try
+    while (true)
     {
-        func(tr, (ex)
+        try
         {
-            if (ex)
-                onError(tr, ex, func, cb);
+            func(tr);
+            tr.commit;
+            return;
+        }
+        catch (Exception ex)
+        {
+            if (auto fdbex = cast(FDBException)ex)
+                tr.onError(fdbex);
             else
             {
-                auto future = tr.commit((commitErr)
-                {
-                    if (commitErr)
-                        onError(tr, commitErr, func, cb);
-                    else
-                        cb(commitErr);
-                });
-                future.await;
+                // the error cannot be retried so we need to cancel the
+                // transaction
+                tr.cancel;
+                throw ex;
             }
-        });
-    }
-    catch (Exception ex)
-    {
-        onError(tr, ex, func, cb);
+        }
     }
 }
 
-private void onError(
-    shared Transaction tr,
-    Exception          ex,
-    WorkFunc           func,
-    VoidFutureCallback cb)
+void retryLoopAsync(
+    shared Transaction    tr,
+    in WorkFunc           func,
+    in VoidFutureCallback cb)
 {
-    if (auto fdbex = cast(FDBException)ex)
+    while (true)
     {
-        tr.onErrorAsync(fdbex, (retryErr)
+        try
         {
-            if (retryErr)
-                cb(retryErr);
+            func(tr);
+            tr.commit;
+            cb(null);
+            return;
+        }
+        catch (Exception ex)
+        {
+            if (auto fdbex = cast(FDBException)ex)
+                tr.onError(fdbex);
             else
-                retryLoop(tr, func, cb);
-        });
+            {
+                // the error cannot be retried so we need to cancel the
+                // transaction
+                tr.cancel;
+                cb(cast(Exception) ex);
+                return;
+            }
+        }
     }
-    else
-    {
-        tr.cancel();
-        cb(ex);
-    }
-};
+}
