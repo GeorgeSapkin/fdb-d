@@ -3,6 +3,8 @@ import
     std.array,
     std.c.stdlib,
     std.conv,
+    std.parallelism,
+    std.range,
     std.stdio;
 
 import
@@ -23,21 +25,20 @@ void main()
     }
 
     auto prefix = "SomeKey";
-    auto key1 = pack(prefix, 1);
-    auto key2 = pack(prefix, 2);
+    db.clearRange(prefix.pack.range);
 
-    "Doing set transaction".writeln;
+    "Setting values using concurrent transactions".writeln;
+    foreach(idx; iota(0, 10).parallel)
+        db.run((tr)
+        {
+            auto key = pack(prefix, cast(long)idx);
+            tr[key]  = pack(cast(long)idx);
+        });
+
+    "Getting SomeKey range".writeln;
     db.run((tr)
     {
-        tr[key1] = pack("SomeValue1");
-        tr[key2] = pack("SomeValue2");
-    });
-
-    "Doing get transaction".writeln;
-    db.run((tr)
-    {
-        "Getting [SomeKey1, SomeKey2] range".writeln;
-        auto r = tr[rangeInclusive(key1, key2)];
+        auto r = tr[prefix.pack.range];
         foreach (record; r)
         {
             "Got ".write;
