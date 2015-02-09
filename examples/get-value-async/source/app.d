@@ -28,7 +28,7 @@ void main()
         "Setting SomeKey to SomeValue".writeln;
         auto key = "SomeKey".pack;
         tr[key]  = "SomeValue".pack;
-        tr.commit((ex)
+        tr.commitAsync((ex)
         {
             if (ex)
                 ex.handleException;
@@ -46,15 +46,10 @@ void main()
 
                 writeln("SomeKey = " ~ value.unpack!string);
 
-                tr2.commit((ex3)
-                {
-                    if (ex3)
-                        ex3.handleException;
-                    "Committed read transaction".writeln;
+                tr2.cancel;
 
-                    "Stopping network".writeln;
-                    fdb.close;
-                });
+                "Stopping network".writeln;
+                fdb.close;
             });
         });
     }

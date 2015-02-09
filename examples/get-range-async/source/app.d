@@ -35,7 +35,7 @@ void main()
         tr[key1]  = pack("SomeValue1");
         tr[key2]  = pack("SomeValue2");
 
-        tr.commit((ex)
+        tr.commitAsync((ex)
         {
             "Creating read transaction".writeln;
             auto tr2 = db.createTransaction;
@@ -70,12 +70,8 @@ void main()
             {
                 if (ex2)
                     ex2.handleException;
-                "Commiting read transaction".writeln;
-                tr2.commit((ex3)
-                {
-                   "Stopping network".writeln;
-                    fdb.close;
-                });
+                tr2.cancel;
+                fdb.close;
             });
         });
     }
