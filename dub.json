@@ -1,7 +1,7 @@
 {
 	"name":         "fdb-d",
 	"description":  "FoundationDB D API",
-	"copyright":    "Copyright © 2014, George Sapkin",
+	"copyright":    "Copyright © 2014-2015, George Sapkin",
 	"authors":     ["George Sapkin"],
 	"license":      "MIT",
 	"targetType":   "library",
