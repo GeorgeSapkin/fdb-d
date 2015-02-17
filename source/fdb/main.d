@@ -12,8 +12,13 @@ import
     fdb.future,
     fdb.networkoptions;
 
-private shared auto networkStarted = false;
-private shared bool apiSelected    = false;
+private shared
+{
+    auto networkStarted = false;
+    bool apiSelected    = false;
+
+    Cluster cluster;
+}
 
 private auto FBD_RUNTIME_API_VERSION = FDB_API_VERSION;
 
@@ -24,7 +29,7 @@ in
 }
 body
 {
-    auto err = fdb_select_api_version(apiVersion);
+    const err = fdb_select_api_version(apiVersion);
     enforceError(err);
 }
 
@@ -39,7 +44,7 @@ body
     ownerTid.send(err);
 }
 
-void startNetwork()
+private void startNetwork()
 in
 {
     assert(!networkStarted);
@@ -52,14 +57,14 @@ body
         selectAPIVersion(FBD_RUNTIME_API_VERSION);
 
     NetworkOptions.init;
-    auto err = fdb_setup_network();
+    const err = fdb_setup_network();
     enforceError(err);
 
     spawn(&networkThread);
     networkStarted = true;
 }
 
-void stopNetwork()
+private void stopNetwork()
 in
 {
     assert(networkStarted);
@@ -68,23 +73,19 @@ body
 {
     if (!networkStarted) return;
 
-    auto err = fdb_stop_network();
+    const err = fdb_stop_network();
     enforceError(err);
 
-    auto taskErr = receiveOnly!fdb_error_t;
+    const taskErr = receiveOnly!fdb_error_t;
     enforceError(taskErr);
 
     networkStarted = false;
 }
 
-auto createCluster(in string clusterFilePath = null)
+private auto createCluster(in string clusterFilePath = null)
 in
 {
     assert(networkStarted);
-}
-out (result)
-{
-    assert(result !is null);
 }
 body
 {
@@ -93,18 +94,27 @@ body
     future.await;
 
     ClusterHandle ch;
-    auto err = fdb_future_get_cluster(fh, &ch);
+    const err = fdb_future_get_cluster(fh, &ch);
     enforceError(err);
 
-    return new shared Cluster(ch);
+    return new Cluster(ch);
 }
 
 auto open(in string clusterFilePath = null)
 {
     startNetwork;
-    auto cluster = createCluster(clusterFilePath);
-    auto db      = cluster.openDatabase;
+
+    auto cl = createCluster(clusterFilePath);
+    cluster = cast(shared)cl;
+
+    auto db = cl.openDatabase;
     return db;
 }
 
-alias close = stopNetwork;
+void close()
+{
+    auto cl = cast(Cluster)cluster;
+    cl.dispose;
+
+    stopNetwork;
+}

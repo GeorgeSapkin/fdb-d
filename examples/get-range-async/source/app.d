@@ -11,7 +11,7 @@ import
 
 void main()
 {
-    shared Database db;
+    Database db;
     try
     {
         "Opening database".writeln;
@@ -28,20 +28,22 @@ void main()
         auto tr = db.createTransaction;
 
         auto prefix = "SomeKey";
-        auto key1   = pack(prefix, 1);
-        auto key2   = pack(prefix, 2);
+        tr.clearRange(prefix.pack.range);
 
         "Setting values".writeln;
-        tr[key1]  = pack("SomeValue1");
-        tr[key2]  = pack("SomeValue2");
+        foreach(idx; 0..10)
+        {
+            auto key = pack(prefix, cast(long)idx);
+            tr[key]  = pack(cast(long)idx);
+        }
 
         tr.commitAsync((ex)
         {
             "Creating read transaction".writeln;
             auto tr2 = db.createTransaction;
 
-            "Getting [SomeKey1, SomeKey2] range".writeln;
-            auto f  = tr2.getRangeAsync(rangeInclusive(key1, key2));
+            "Getting [SomeKey] range".writeln;
+            auto f  = tr2.getRangeAsync(prefix.pack.range);
             f.forEach((Record record)
             {
                 "Got ".write;
@@ -76,9 +78,7 @@ void main()
         });
     }
     catch (FDBException ex)
-    {
         ex.handleException;
-    }
 }
 
 void handleException(E)(E ex)

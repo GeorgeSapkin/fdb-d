@@ -18,52 +18,44 @@ import
     fdb.rangeinfo,
     fdb.transaction;
 
-shared class Database : IDatabaseContext, IDisposable
+class Database : IDatabaseContext, IDisposable
 {
     private const Cluster  cluster;
     private DatabaseHandle dbh;
 
-    private Transaction[]  transactions;
+    private Transaction[] transactions;
+    private shared auto lock = new Object;
 
-    invariant()
-    {
-        assert(cluster !is null);
-    }
-
-    this(DatabaseHandle dbh, const shared Cluster cluster)
+    this(DatabaseHandle dbh, const Cluster cluster)
     in
     {
-        enforce(cluster !is null, "cluster must be set");
         enforce(dbh !is null, "dbh must be set");
     }
     body
     {
-        this.dbh     = cast(shared)dbh;
+        this.dbh     = dbh;
         this.cluster = cluster;
-    }
-
-    ~this()
-    {
-        dispose;
     }
 
     void dispose()
     {
+        synchronized (lock)
+            foreach (tr; transactions)
+                tr.dispose;
+
         if (!dbh) return;
 
-        fdb_database_destroy(cast(DatabaseHandle)dbh);
+        fdb_database_destroy(dbh);
         dbh = null;
     }
 
     private auto createTransactionImpl()
     {
         TransactionHandle th;
-        auto err = fdb_database_create_transaction(
-            cast(DatabaseHandle)dbh,
-            &th);
+        const err = fdb_database_create_transaction(dbh, &th);
         enforceError(err);
 
-        auto tr = new shared Transaction(th, this);
+        auto tr = new Transaction(th, this);
         return tr;
     }
 
@@ -75,7 +67,7 @@ shared class Database : IDatabaseContext, IDisposable
     body
     {
         auto tr = createTransactionImpl();
-        synchronized (this)
+        synchronized (lock)
             transactions ~= tr;
         return tr;
     }
@@ -127,8 +119,8 @@ shared class Database : IDatabaseContext, IDisposable
 
     private void setDatabaseOption(in DatabaseOption op, in long value) const
     {
-        const auto err = fdb_database_set_option(
-            cast(DatabaseHandle)dbh,
+        const err = fdb_database_set_option(
+            dbh,
             op,
             cast(immutable(char)*)&value,
             cast(int)value.sizeof);
@@ -137,19 +129,20 @@ shared class Database : IDatabaseContext, IDisposable
 
     private void setDatabaseOption(in DatabaseOption op, in string value) const
     {
-        const auto err = fdb_database_set_option(
-            cast(DatabaseHandle)dbh,
+        const err = fdb_database_set_option(
+            dbh,
             op,
             value.toStringz,
             cast(int)value.length);
         enforceError(err);
     }
 
-    shared(Value) opIndex(in Key key)
+    Value opIndex(in Key key)
     {
         scope auto tr = createTransactionImpl();
-        auto value    = tr[key];
-        tr.commit;
+        scope (exit) tr.dispose;
+
+        auto value = tr[key];
         return value;
     }
 
@@ -157,14 +150,15 @@ shared class Database : IDatabaseContext, IDisposable
     {
         auto tr    = createTransaction();
         auto value = cast(RecordRange)tr[info];
-        tr.commit;
         return value;
     }
 
     inout(Value) opIndexAssign(inout(Value) value, in Key key)
     {
         scope auto tr = createTransactionImpl();
-        tr[key]       = value;
+        scope (exit) tr.dispose;
+
+        tr[key] = value;
         tr.commit;
         return value;
     }
@@ -172,6 +166,8 @@ shared class Database : IDatabaseContext, IDisposable
     void clear(in Key key)
     {
         scope auto tr = createTransactionImpl();
+        scope (exit) tr.dispose;
+
         tr.clear(key);
         tr.commit;
     }
@@ -179,6 +175,8 @@ shared class Database : IDatabaseContext, IDisposable
     void clearRange(in RangeInfo info)
     {
         scope auto tr = createTransactionImpl();
+        scope (exit) tr.dispose;
+
         tr.clearRange(info);
         tr.commit;
     }
@@ -186,6 +184,8 @@ shared class Database : IDatabaseContext, IDisposable
     void run(in WorkFunc func)
     {
         scope auto tr = createTransactionImpl();
+        scope (exit) tr.dispose;
+
         tr.run(func);
     }
 

@@ -17,17 +17,17 @@ import
     fdb.range,
     fdb.rangeinfo;
 
-shared interface IReadOnlyTransaction
+interface IReadOnlyTransaction
 {
     @property bool isSnapshot();
 
-    shared(Key) getKey(in Selector selector);
-    shared(KeyFuture) getKeyAsync(
+    Key getKey(in Selector selector);
+    KeyFuture getKeyAsync(
         in Selector       selector,
         KeyFutureCallback callback = null);
 
-    shared(Value) get(in Key key);
-    shared(ValueFuture) getAsync(
+    Value get(in Key key);
+    ValueFuture getAsync(
         in Key              key,
         ValueFutureCallback callback = null);
 
@@ -36,7 +36,7 @@ shared interface IReadOnlyTransaction
      */
     RecordRange getRange(RangeInfo info);
     /// ditto
-    shared(KeyValueFuture) getRangeAsync(
+    KeyValueFuture getRangeAsync(
         RangeInfo              info,
         KeyValueFutureCallback callback = null);
 
@@ -44,45 +44,47 @@ shared interface IReadOnlyTransaction
     void addWriteConflictRange(RangeInfo info);
 
     void onError(in FDBException ex);
-    shared(VoidFuture) onErrorAsync(
+    VoidFuture onErrorAsync(
         in FDBException    ex,
         VoidFutureCallback callback = null);
 
     ulong getReadVersion();
-    shared(VersionFuture) getReadVersionAsync(
+    VersionFuture getReadVersionAsync(
         VersionFutureCallback callback = null);
 
     long getCommittedVersion();
 
-    shared(string[]) getAddressesForKey(in Key key);
-    shared(StringFuture) getAddressesForKeyAsync(
+    string[] getAddressesForKey(in Key key);
+    StringFuture getAddressesForKeyAsync(
         in Key               key,
         StringFutureCallback callback = null);
 
-    shared(Value) opIndex(in Key key);
+    Value opIndex(in Key key);
 
     RecordRange opIndex(RangeInfo info);
 }
 
-shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
+class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
 {
     private const Database    db;
     private TransactionHandle th;
 
     private const bool _isSnapshot;
-    @property bool isSnapshot()
+    @property
+    bool isSnapshot()
     {
         return _isSnapshot;
     }
 
     private IDisposable[] futures;
+    private shared auto lock = new Object;
 
     invariant()
     {
         assert(db !is null);
     }
 
-    this(TransactionHandle th, in shared Database db)
+    this(TransactionHandle th, in Database db)
     in
     {
         enforce(db !is null, "db must be set");
@@ -90,20 +92,15 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     }
     body
     {
-        this.th          = cast(shared)th;
+        this.th          = th;
         this.db          = db;
         this._isSnapshot = false;
     }
 
-    invariant()
-    {
-        assert(db !is null);
-    }
-
     private this(
-        shared TransactionHandle th,
-        in shared Database       db,
-        in bool                  isSnapshot)
+        TransactionHandle th,
+        in Database       db,
+        in bool           isSnapshot)
     in
     {
         enforce(db !is null, "db must be set");
@@ -111,29 +108,41 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     }
     body
     {
-        this.th          = cast(shared)th;
+        this.th          = th;
         this.db          = db;
         this._isSnapshot = isSnapshot;
     }
 
-    @property shared(IReadOnlyTransaction) snapshot()
+    invariant()
     {
-        auto snapshot = new shared Transaction(th, db, true);
-        return cast(shared IReadOnlyTransaction)snapshot;
+        assert(db !is null);
     }
 
-    ~this()
+    @property IReadOnlyTransaction snapshot()
     {
-        dispose;
+        auto snapshot = new Transaction(th, db, true);
+        return cast(IReadOnlyTransaction)snapshot;
     }
 
     void dispose()
     {
-        // parent transaction should handle destruction
-        if (!th || isSnapshot) return;
+        disposeFutures;
 
-        fdb_transaction_destroy(cast(TransactionHandle)th);
-        th = null;
+        synchronized (lock)
+        {
+            // parent transaction should handle destruction
+            if (!th || isSnapshot) return;
+
+            fdb_transaction_destroy(th);
+            th = null;
+        }
+    }
+
+    private void disposeFutures()
+    {
+        synchronized (lock)
+            foreach (future; futures)
+                future.dispose;
     }
 
     void set(in Key key, in Value value) const
@@ -147,7 +156,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     body
     {
         fdb_transaction_set(
-            cast(TransactionHandle)th,
+            th,
             &key[0],
             cast(int)key.length,
             &value[0],
@@ -157,20 +166,30 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     void commit()
     {
         // cancel, commit and reset are mutually exclusive
-        synchronized (this)
+        synchronized (lock)
         {
-            auto fh     = fdb_transaction_commit(cast(TransactionHandle)th);
+            auto fh     = fdb_transaction_commit(th);
             auto future = createFuture!VoidFuture(fh, this);
             future.await;
         }
+
+        disposeFutures;
     }
 
     auto commitAsync(VoidFutureCallback callback = null)
     {
-        // cancel, commit and reset are mutually exclusive
-        synchronized (this)
+        VoidFutureCallback intCb = (ex)
         {
-            auto fh      = fdb_transaction_commit(cast(TransactionHandle)th);
+            if (ex is null)
+                disposeFutures;
+
+            callback(ex);
+        };
+
+        // cancel, commit and reset are mutually exclusive
+        synchronized (lock)
+        {
+            auto fh      = fdb_transaction_commit(th);
             auto future  = startOrCreateFuture!VoidFuture(fh, this, callback);
             futures     ~= future;
             return future;
@@ -180,8 +199,10 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     void cancel()
     {
         // cancel, commit and reset are mutually exclusive
-        synchronized (this)
-            fdb_transaction_cancel(cast(TransactionHandle)th);
+        synchronized (lock)
+            fdb_transaction_cancel(th);
+
+        disposeFutures;
     }
 
     /**
@@ -190,8 +211,10 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     void reset()
     {
         // cancel, commit and reset are mutually exclusive
-        synchronized (this)
-            fdb_transaction_reset(cast(TransactionHandle)th);
+        synchronized (lock)
+            fdb_transaction_reset(th);
+
+        disposeFutures;
     }
 
     void clear(in Key key) const
@@ -202,10 +225,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     }
     body
     {
-        fdb_transaction_clear(
-            cast(TransactionHandle)th,
-            &key[0],
-            cast(int)key.length);
+        fdb_transaction_clear(th, &key[0], cast(int)key.length);
     }
 
     void clearRange(in RangeInfo info) const
@@ -217,17 +237,17 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
     body
     {
         fdb_transaction_clear_range(
-            cast(TransactionHandle)th,
+            th,
             &info.begin.key[0],
             cast(int)info.begin.key.length,
             &info.end.key[0],
             cast(int)info.end.key.length);
     }
 
-    shared(Key) getKey(in Selector selector)
+    Key getKey(in Selector selector)
     {
         auto fh = fdb_transaction_get_key(
-            cast(TransactionHandle)th,
+            th,
             &selector.key[0],
             cast(int)selector.key.length,
             cast(fdb_bool_t)selector.orEqual,
@@ -240,12 +260,12 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         return value;
     }
 
-    shared(KeyFuture) getKeyAsync(
+    KeyFuture getKeyAsync(
         in Selector       selector,
         KeyFutureCallback callback = null)
     {
         auto fh = fdb_transaction_get_key(
-            cast(TransactionHandle)th,
+            th,
             &selector.key[0],
             cast(int)selector.key.length,
             cast(fdb_bool_t)selector.orEqual,
@@ -258,7 +278,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         return future;
     }
 
-    shared(Value) get(in Key key)
+    Value get(in Key key)
     in
     {
         enforce(key !is null);
@@ -278,7 +298,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         return value;
     }
 
-    shared(ValueFuture) getAsync(in Key key, ValueFutureCallback callback = null)
+    ValueFuture getAsync(in Key key, ValueFutureCallback callback = null)
     in
     {
         enforce(key !is null);
@@ -328,14 +348,14 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
 
         scope auto future = createFuture!KeyValueFuture(fh, this, info);
 
-        auto value = cast(RecordRange)future.await;
+        auto value = future.await;
         return value;
     }
 
     /**
      * Returns: Key-value pairs within (begin, end) range
      */
-    shared(KeyValueFuture) getRangeAsync(
+    KeyValueFuture getRangeAsync(
         RangeInfo              info,
         KeyValueFutureCallback callback = null)
     {
@@ -432,7 +452,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         future.await;
     }
 
-    shared(VoidFuture) onErrorAsync(
+    VoidFuture onErrorAsync(
         in FDBException    ex,
         VoidFutureCallback callback = null)
     {
@@ -468,7 +488,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         return value;
     }
 
-    shared(VersionFuture) getReadVersionAsync(VersionFutureCallback callback = null)
+    VersionFuture getReadVersionAsync(VersionFutureCallback callback = null)
     {
         auto fh = fdb_transaction_get_read_version(
             cast(TransactionHandle)th);
@@ -488,7 +508,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         return ver;
     }
 
-    shared(string[]) getAddressesForKey(in Key key)
+    string[] getAddressesForKey(in Key key)
     in
     {
         enforce(key !is null);
@@ -507,7 +527,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         return value;
     }
 
-    shared(StringFuture) getAddressesForKeyAsync(
+    StringFuture getAddressesForKeyAsync(
         in Key               key,
         StringFutureCallback callback = null)
     in
@@ -859,7 +879,7 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
         enforceError(err);
     }
 
-    shared(Value) opIndex(in Key key)
+    Value opIndex(in Key key)
     {
         return get(key);
     }
@@ -882,12 +902,13 @@ shared class Transaction : IDatabaseContext, IDisposable, IReadOnlyTransaction
 
     auto runAsync(in WorkFunc func, in VoidFutureCallback commitCallback)
     {
-        auto future = createFuture!retryLoopAsync(this, func, commitCallback);
+        auto tr     = cast(shared)this;
+        auto future = createFuture!retryLoopAsync(tr, func, commitCallback);
         return future;
     };
 }
 
-void retryLoop(shared Transaction tr, in WorkFunc func)
+void retryLoop(Transaction tr, in WorkFunc func)
 {
     while (true)
     {
@@ -917,24 +938,25 @@ void retryLoopAsync(
     in WorkFunc           func,
     in VoidFutureCallback cb)
 {
+    auto localTr = cast(Transaction)tr;
     while (true)
     {
         try
         {
-            func(tr);
-            tr.commit;
+            func(localTr);
+            localTr.commit;
             cb(null);
             return;
         }
         catch (Exception ex)
         {
             if (auto fdbex = cast(FDBException)ex)
-                tr.onError(fdbex);
+                localTr.onError(fdbex);
             else
             {
                 // the error cannot be retried so we need to cancel the
                 // transaction
-                tr.cancel;
+                localTr.cancel;
                 cb(cast(Exception) ex);
                 return;
             }

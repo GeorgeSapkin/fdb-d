@@ -18,6 +18,7 @@ import
     fdb.fdb_c,
     fdb.range,
     fdb.rangeinfo,
+    fdb.traits,
     fdb.transaction;
 
 alias CompletionCallback = void delegate(Exception ex);
@@ -40,19 +41,17 @@ class FutureException : Exception
     mixin ExceptionCtorMixin;
 }
 
-shared class FutureBase(V)
+class FutureBase(V)
 {
     static if (!is(V == void))
-    {
         protected V value;
-    }
 
     protected Exception exception;
 
-    abstract shared(V) await();
+    abstract V await();
 }
 
-shared class FunctionFuture(alias fun, bool pool = true, Args...) :
+class FunctionFuture(alias fun, bool pool = true, Args...) :
     FutureBase!(ReturnType!fun),
 
     // dummy implementation to allow storage in KeyValueFuture
@@ -64,32 +63,28 @@ shared class FunctionFuture(alias fun, bool pool = true, Args...) :
 
     this(Args args)
     {
-        t = cast(shared)task!fun(args);
-        auto localTask = cast(T)t;
+        t = task!fun(args);
         static if (pool)
-            taskPool.put(localTask);
+            taskPool.put(t);
         else
-            localTask.executeInNewThread;
+            t.executeInNewThread;
     }
 
     void dispose() {}
 
-    override shared(V) await()
+    override V await()
     {
         try
         {
-            auto localTask = cast(T)t;
             static if (!is(V == void))
-                value = localtask.yieldForce;
+                value = t.yieldForce;
             else
-                localTask.yieldForce;
+                t.yieldForce;
         }
         catch (Exception ex)
-        {
-            exception = cast(shared)ex;
-        }
+            exception = ex;
 
-        enforce(exception is null, cast(Exception)exception);
+        enforce(exception is null, exception);
         static if (!is(V == void))
             return value;
     }
@@ -97,7 +92,7 @@ shared class FunctionFuture(alias fun, bool pool = true, Args...) :
 
 alias FutureCallback(V) = void delegate(Exception ex, V value);
 
-shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
+class FDBFutureBase(C, V) : FutureBase!V, IDisposable
 {
     private alias SF  = shared FDBFutureBase!(C, V);
     private alias SFH = shared FutureHandle;
@@ -107,15 +102,10 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
     private Transaction  tr;
     private C            callbackFunc;
 
-    this(FutureHandle fh, shared Transaction tr)
+    this(FutureHandle fh, Transaction tr)
     {
-        this.fh = cast(shared)fh;
+        this.fh = fh;
         this.tr = tr;
-    }
-
-    ~this()
-    {
-        dispose;
     }
 
     void dispose()
@@ -129,41 +119,41 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
 
     auto start(C callbackFunc)
     {
-        this.callbackFunc = cast(shared)callbackFunc;
-        const auto err = fdb_future_set_callback(
-            cast(FutureHandle) fh,
-            cast(FDBCallback)  &futureReady,
-            cast(void*)        this);
+        this.callbackFunc = callbackFunc;
+        const err = fdb_future_set_callback(
+            fh,
+            cast(FDBCallback)&futureReady,
+            cast(void*)cast(shared)this);
         enforceError(err);
 
         return this;
     }
 
-    shared(V) await(C callbackFunc)
+    V await(C callbackFunc)
     {
         if (callbackFunc)
             start(callbackFunc);
 
-        shared err = fdb_future_block_until_ready(cast(FutureHandle)fh);
+        const err = fdb_future_block_until_ready(fh);
         if (err != FDBError.SUCCESS)
         {
-            exception = cast(shared)err.toException;
-            enforce(exception is null, cast(Exception)exception);
+            exception = err.toException;
+            enforce(exception is null, exception);
         }
 
         static if (!is(V == void))
-            value = cast(shared)extractValue(fh, err);
+            value = extractValue(fh, err);
         else
             extractValue(fh, err);
 
-        exception = cast(shared)err.toException;
+        exception = err.toException;
 
-        enforce(exception is null, cast(Exception)exception);
+        enforce(exception is null, exception);
         static if (!is(V == void))
             return value;
     }
 
-    override shared(V) await()
+    override V await()
     {
         static if (!is(V == void))
             return await(null);
@@ -171,7 +161,15 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
             await(null);
     }
 
-    extern(C) static void futureReady(SFH f, SF thiz)
+    V await() shared
+    {
+        static if (!is(V == void))
+            return this.unshare.await(null);
+        else
+            this.unshare.await(null);
+    }
+
+    extern(C) static void futureReady(FutureHandle f, SF thiz)
     {
         thread_attachThis;
         auto futureTask = task!worker(f, thiz);
@@ -179,32 +177,30 @@ shared class FDBFutureBase(C, V) : FutureBase!V, IDisposable
         taskPool.put(futureTask);
     }
 
-    static void worker(SFH f, SF thiz)
+    static void worker(FutureHandle f, SF thiz)
     {
-        shared fdb_error_t err;
-        with (thiz)
-        {
+        fdb_error_t err;
+        with (cast(FDBFutureBase!(C, V))thiz)
             static if (is(V == void))
             {
-                extractValue(cast(shared)f, err);
+                extractValue(f, err);
                 if (callbackFunc)
                     (cast(C)callbackFunc)(err.toException);
             }
             else
             {
-                auto value = extractValue(cast(shared)f, err);
+                auto value = extractValue(f, err);
                 if (callbackFunc)
                     (cast(C)callbackFunc)(err.toException, value);
             }
-        }
     }
 
-    abstract V extractValue(SFH fh, out SE err);
+    abstract V extractValue(FutureHandle fh, out fdb_error_t err);
 }
 
 private mixin template FDBFutureCtor()
 {
-    this(FutureHandle fh, shared Transaction tr = null)
+    this(FutureHandle fh, Transaction tr = null)
     {
         super(fh, tr);
     }
@@ -212,23 +208,19 @@ private mixin template FDBFutureCtor()
 
 alias ValueFutureCallback = FutureCallback!Value;
 
-shared class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
+class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
 {
     mixin FDBFutureCtor;
 
     private alias PValue = ubyte *;
 
-    override Value extractValue(SFH fh, out SE err)
+    override Value extractValue(FutureHandle fh, out fdb_error_t err)
     {
         PValue value;
         int    valueLength,
                valuePresent;
 
-        err = fdb_future_get_value(
-            cast(FutureHandle)fh,
-            &valuePresent,
-            &value,
-            &valueLength);
+        err = fdb_future_get_value(fh, &valuePresent, &value, &valueLength);
         if (err != FDBError.SUCCESS || !valuePresent)
             return null;
         return value[0..valueLength];
@@ -237,21 +229,18 @@ shared class ValueFuture : FDBFutureBase!(ValueFutureCallback, Value)
 
 alias KeyFutureCallback = FutureCallback!Key;
 
-shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
+class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
 {
     mixin FDBFutureCtor;
 
     private alias PKey = ubyte *;
 
-    override Key extractValue(SFH fh, out SE err)
+    override Key extractValue(FutureHandle fh, out fdb_error_t err)
     {
         PKey key;
         int  keyLength;
 
-        err = fdb_future_get_key(
-            cast(FutureHandle)fh,
-            &key,
-            &keyLength);
+        err = fdb_future_get_key(fh, &key, &keyLength);
         if (err != FDBError.SUCCESS)
             return typeof(return).init;
         return key[0..keyLength];
@@ -260,14 +249,13 @@ shared class KeyFuture : FDBFutureBase!(KeyFutureCallback, Key)
 
 alias VoidFutureCallback = void delegate(Exception ex);
 
-shared class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
+class VoidFuture : FDBFutureBase!(VoidFutureCallback, void)
 {
     mixin FDBFutureCtor;
 
-    override void extractValue(SFH fh, out SE err)
+    override void extractValue(FutureHandle fh, out fdb_error_t err)
     {
-        err = fdb_future_get_error(
-            cast(FutureHandle)fh);
+        err = fdb_future_get_error(fh);
     }
 }
 
@@ -277,32 +265,39 @@ alias BreakableForEachCallback = void delegate(
     Record   record,
     out bool breakLoop);
 
-shared class KeyValueFuture
+class KeyValueFuture
     : FDBFutureBase!(KeyValueFutureCallback, RecordRange)
 {
     const RangeInfo info;
 
     private IDisposable[] futures;
+    private shared auto futureLock = new Object;
 
-    this(FutureHandle fh, shared Transaction tr, RangeInfo info)
+    this(FutureHandle fh, Transaction tr, RangeInfo info)
     {
         super(fh, tr);
 
-        this.info = cast(shared)info;
+        this.info = info;
     }
 
-    override RecordRange extractValue(SFH fh, out SE err)
+    override void dispose()
+    {
+        synchronized (futureLock)
+            foreach (future; futures)
+                future.dispose;
+
+        super.dispose;
+    }
+
+    override RecordRange extractValue(FutureHandle fh, out fdb_error_t err)
     {
         FDBKeyValue * kvs;
         int len;
+
         // Receives true if there are more result, or false if all results have
         // been transmitted
         fdb_bool_t more;
-        err = fdb_future_get_keyvalue_array(
-            cast(FutureHandle)fh,
-            &kvs,
-            &len,
-            &more);
+        err = fdb_future_get_keyvalue_array(fh, &kvs, &len, &more);
         if (err != FDBError.SUCCESS)
             return typeof(return).init;
 
@@ -322,8 +317,8 @@ shared class KeyValueFuture
 
     auto forEach(FC)(FC fun, CompletionCallback cb)
     {
-        auto future  = createFuture!(foreachTask!FC)(this, fun, cb);
-        synchronized (this)
+        auto future  = createFuture!(foreachTask!FC)(this.share, fun, cb);
+        synchronized (futureLock)
             futures ~= future;
         return future;
     }
@@ -336,9 +331,8 @@ shared class KeyValueFuture
         try
         {
             // This will block until value is ready
-            auto range = cast(RecordRange)future.await;
+            auto range = future.await;
             foreach (kv; range)
-            {
                 static if (arity!fun == 2)
                 {
                     bool breakLoop;
@@ -347,29 +341,24 @@ shared class KeyValueFuture
                 }
                 else
                     fun(kv);
-            }
 
             cb(null);
         }
         catch (Exception ex)
-        {
             cb(ex);
-        }
     }
 }
 
 alias VersionFutureCallback = FutureCallback!ulong;
 
-shared class VersionFuture : FDBFutureBase!(VersionFutureCallback, ulong)
+class VersionFuture : FDBFutureBase!(VersionFutureCallback, ulong)
 {
     mixin FDBFutureCtor;
 
-    override ulong extractValue(SFH fh, out SE err)
+    override ulong extractValue(FutureHandle fh, out fdb_error_t err)
     {
         long ver;
-        err = fdb_future_get_version(
-            cast(FutureHandle)fh,
-            &ver);
+        err = fdb_future_get_version(fh, &ver);
         if (err != FDBError.SUCCESS)
             return typeof(return).init;
         return ver;
@@ -378,18 +367,15 @@ shared class VersionFuture : FDBFutureBase!(VersionFutureCallback, ulong)
 
 alias StringFutureCallback = FutureCallback!(string[]);
 
-shared class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
+class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
 {
     mixin FDBFutureCtor;
 
-    override string[] extractValue(SFH fh, out SE err)
+    override string[] extractValue(FutureHandle fh, out fdb_error_t err)
     {
         char ** stringArr;
         int     count;
-        err = fdb_future_get_string_array(
-            cast(FutureHandle)fh,
-            &stringArr,
-            &count);
+        err = fdb_future_get_string_array(fh, &stringArr, &count);
         if (err != FDBError.SUCCESS)
             return typeof(return).init;
         auto strings = stringArr[0..count].map!(to!string).array;
@@ -397,14 +383,9 @@ shared class StringFuture : FDBFutureBase!(StringFutureCallback, string[])
     }
 }
 
-shared class WatchFuture : VoidFuture
+class WatchFuture : VoidFuture
 {
     mixin FDBFutureCtor;
-
-    ~this()
-    {
-        cancel;
-    }
 
     void cancel()
     {
@@ -415,14 +396,14 @@ shared class WatchFuture : VoidFuture
 
 auto createFuture(F, Args...)(Args args)
 {
-    auto future = new shared F(args);
+    auto future = new F(args);
     return future;
 }
 
 auto createFuture(alias fun, bool pool = true, Args...)(Args args)
 if (isSomeFunction!fun)
 {
-    auto future = new shared FunctionFuture!(fun, pool, Args)(args);
+    auto future = new FunctionFuture!(fun, pool, Args)(args);
     return future;
 }
 

@@ -1,6 +1,6 @@
 module fdb.disposable;
 
-shared interface IDisposable
+interface IDisposable
 {
     void dispose();
 }

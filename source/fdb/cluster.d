@@ -12,11 +12,12 @@ import
     fdb.fdb_c,
     fdb.future;
 
-shared class Cluster : IDisposable
+class Cluster : IDisposable
 {
     private ClusterHandle ch;
 
-    private Database[]    databases;
+    private Database[] databases;
+    private shared auto dbLock = new Object;
 
     this(ClusterHandle ch)
     in
@@ -25,19 +26,18 @@ shared class Cluster : IDisposable
     }
     body
     {
-        this.ch = cast(shared)ch;
-    }
-
-    ~this()
-    {
-        dispose;
+        this.ch = ch;
     }
 
     void dispose()
     {
+        synchronized (dbLock)
+            foreach (db; databases)
+                db.dispose;
+
         if (!ch) return;
 
-        fdb_cluster_destroy(cast(ClusterHandle)ch);
+        fdb_cluster_destroy(ch);
         ch = null;
     }
 
@@ -49,19 +49,19 @@ shared class Cluster : IDisposable
     body
     {
         auto fh = fdb_cluster_create_database(
-            cast(ClusterHandle)ch,
-            dbName.toStringz(),
+            ch,
+            dbName.toStringz,
             cast(int)dbName.length);
 
         scope auto future = createFuture!VoidFuture(fh);
         future.await;
 
         DatabaseHandle dbh;
-        auto err = fdb_future_get_database(fh, &dbh);
+        const err = fdb_future_get_database(fh, &dbh);
         enforceError(err);
 
-        auto db = new shared Database(dbh, this);
-        synchronized (this)
+        auto db = new Database(dbh, this);
+        synchronized (dbLock)
             databases ~= db;
         return db;
     }

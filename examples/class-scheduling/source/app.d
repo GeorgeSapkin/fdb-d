@@ -41,7 +41,7 @@ void addClass(T)(T tr, const string c)
     tr[pack("class", c)] = pack(100);
 }
 
-void init(shared IDatabaseContext ctx)
+void init(IDatabaseContext ctx)
 {
     ctx.run((tr)
     {
@@ -76,6 +76,8 @@ auto remove(T)(T[] ar, T c)
 
 void simulateStudents(const uint i, const uint ops)
 {
+    auto ctx = cast(IDatabaseContext)db;
+
     auto studentId  = "s" ~ i.to!string;
     auto allClasses = classNames.dup;
 
@@ -99,19 +101,19 @@ void simulateStudents(const uint i, const uint ops)
         try
         {
             if (allClasses.empty)
-                allClasses = availableClasses(db);
+                allClasses = availableClasses(ctx);
 
             if (mood == Mood.ADD)
             {
                 c = allClasses[uniform(0, allClasses.length)];
-                signup(db, studentId, c);
+                signup(ctx, studentId, c);
                 myClasses ~= c;
             }
 
             else if (mood == Mood.DROP)
             {
                 c = myClasses[uniform(0, myClasses.length)];
-                drop(db, studentId, c);
+                drop(ctx, studentId, c);
                 myClasses = myClasses.remove(c);
             }
 
@@ -119,7 +121,7 @@ void simulateStudents(const uint i, const uint ops)
             {
                 oldC = myClasses[uniform(0, myClasses.length)];
                 newC = allClasses[uniform(0, allClasses.length)];
-                switchClasses(db, studentId, oldC, newC);
+                switchClasses(ctx, studentId, oldC, newC);
                 myClasses  = myClasses.remove(oldC);
                 myClasses ~= newC;
             }
@@ -132,9 +134,9 @@ void simulateStudents(const uint i, const uint ops)
     }
 }
 
-auto availableClasses(shared IDatabaseContext ctx)
+auto availableClasses(IDatabaseContext ctx)
 {
-    shared string[] classNames;
+    string[] classNames;
 
     ctx.run((tr)
     {
@@ -144,10 +146,10 @@ auto availableClasses(shared IDatabaseContext ctx)
                 classNames ~= c.key.unpack.back.get!string;
     });
 
-    return cast(string[]) classNames;
+    return classNames;
 }
 
-void signup(shared IDatabaseContext ctx, const string s, const string c)
+void signup(IDatabaseContext ctx, const string s, const string c)
 {
     ctx.run((tr)
     {
@@ -166,7 +168,7 @@ void signup(shared IDatabaseContext ctx, const string s, const string c)
     });
 }
 
-void drop(shared IDatabaseContext ctx, const string s, const string c)
+void drop(IDatabaseContext ctx, const string s, const string c)
 {
     ctx.run((tr)
     {
@@ -181,10 +183,10 @@ void drop(shared IDatabaseContext ctx, const string s, const string c)
   }
 
 void switchClasses(
-    shared IDatabaseContext ctx,
-    const string            s,
-    const string            oldC,
-    const string            newC)
+    IDatabaseContext ctx,
+    const string     s,
+    const string     oldC,
+    const string     newC)
 {
     ctx.run((tr)
     {
@@ -202,12 +204,12 @@ void handleException(E)(E ex)
 
 void main()
 {
-    try db = fdb.open;
+    try db = cast(shared)fdb.open;
     catch (FDBException ex) ex.handleException;
 
     scope (exit) fdb.close;
 
-    init(db);
+    init(cast(Database)db);
     "Initialized".writeln;
 
     runSim(10, 10);

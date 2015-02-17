@@ -38,7 +38,7 @@ fdb_error_t     fdb_select_api_version(int runtime_version)
     return fdb_select_api_version_impl(runtime_version, FDB_API_VERSION);
 }
 
-////////////////////// functions implemented in libfdb_c ///////////////////////
+////////////////////// functions implemented in libfdb_c //////////////////////
 extern (C):
 
 alias FDBCallback = void function(

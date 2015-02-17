@@ -23,12 +23,13 @@ struct Record
 
 struct RecordRange
 {
-    private Record[]           records;
-    private RangeInfo          info;
-    private bool               _more;
-    private shared Transaction tr;
-    private Key                end;
-    private ulong              index;
+    private Record[]    records;
+    private bool        _more;
+    private RangeInfo   info;
+    private Transaction tr;
+
+    private Key   end;
+    private ulong index;
 
     @property auto more() const pure @nogc
     {
@@ -41,10 +42,10 @@ struct RecordRange
     }
 
     this(
-        Record[]           records,
-        in bool            more,
-        RangeInfo          info,
-        shared Transaction tr)
+        Record[]    records,
+        in bool     more,
+        RangeInfo   info,
+        Transaction tr)
     {
         this.records = records;
         this._more   = more;
@@ -97,13 +98,13 @@ struct RecordRange
         else
             batchInfo.begin = end.firstGreaterThan;
 
-        auto batch  = tr.getRange(batchInfo);
-        records     = batch.records;
-        _more       = batch.more;
+        auto batch = tr.getRange(batchInfo);
+        records    = batch.records;
+        _more      = batch.more;
 
         if (!records.empty)
-            end     = records.back.key.dup;
+            end = records.back.key.dup;
         else
-            end     = null;
+            end = null;
     }
 }
