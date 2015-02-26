@@ -13,7 +13,7 @@ import
 
 void main()
 {
-    shared Database db;
+    Database db;
     try
     {
         "Opening database".writeln;
